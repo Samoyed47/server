@@ -1,36 +1,34 @@
 #include "UserManage.h"
 
 
-string UserManage::Register(string buf) //buf:nickname,password,5
+string UserManage::Register(string buf) //buf:nickname#password#5; return:è´¦å·(string)
 {
 	string NickName;
 	string PassWord;
 
-	char Buffer[48];	//½«´«ÈëµÄstring×ªÎªchar *ÒÔÊ¹ÓÃsscanfº¯Êı
+	char Buffer[48];	//å°†ä¼ å…¥çš„stringè½¬ä¸ºchar *ä»¥ä½¿ç”¨sscanfå‡½æ•°
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%s,%s,n", &NickName, &PassWord);
-/*TODO SQL : ÏòUser±íÖĞÌí¼ÓÒ»ÕûĞĞ¼´data£¬ÒÔ×Ö·û´®µÄĞÎÊ½¡¢¶ººÅ¸ô¿ªµÄ·½Ê½±íÊ¾Ã¿¸öÊôĞÔÖµ*/
-	string data = to_string(MaxAccount) + "," + NickName + "," + PassWord + "," + " " + "," + to_string(0) + "," + to_string(0) + "," + to_string(0);//Í·ÏñÕâÀïÓÃÁËÒ»¸ö¿Õ¸ñ£¬socketºÍÏÂÏßÊ±¼ä´ËÊ±ÉèÎª0£¿
-	bool Ok = AddData('User', data);//µ÷ÓÃº¯Êı£¬Ôö¼ÓÒ»ÕûĞĞ
+	sscanf(Buffer, "%s#%s#%d", &NickName, &PassWord);
+/*TODO SQL : å‘Userè¡¨ä¸­æ·»åŠ ä¸€æ•´è¡Œdata*/
+	string data = to_string(MaxAccount) + "#" + NickName + "#" + PassWord + "#" + to_string(0) + "#" + to_string(0) + "#" + to_string(0) + "#" + to_string(0);
 	MaxAccount++;
 
-	if (Ok) {
-		return to_string(MaxAccount - 1);
-	}
+	return to_string(MaxAccount - 1);
 
 }
-string UserManage::Logging(string buf)//buf:ÕËºÅ£¬ÃÜÂë
+string UserManage::Logging(string buf)//buf:è´¦å·#å¯†ç ; return:æˆåŠŸ/å¤±è´¥/ä¸å­˜åœ¨
 {
-	//×Ö·û´®·Ö¸î
+	//å­—ç¬¦ä¸²åˆ†å‰²
 	string Acc;
 	string PWord;
-	char Buffer[1024];	//½«´«ÈëµÄstring×ªÎªchar *ÒÔÊ¹ÓÃsscanfº¯Êı
+	char Buffer[1024];	//å°†ä¼ å…¥çš„stringè½¬ä¸ºchar *ä»¥ä½¿ç”¨sscanfå‡½æ•°
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%s,%s", &Acc, &PWord);
+	sscanf(Buffer, "%s#%s", &Acc, &PWord);
 
-	//ÔÚUser±íÖĞÑ°ÕÒ¸ÃÕËºÅ¶ÔÓ¦µÄÃÜÂë
-/*TODO SQL : ÔÚUser±íÕÒAccount = AccµÄĞĞ£¬µÃµ½Password£¨string£©*/
-	if (sqlite3_exec() == SQLITE_OK) //Èç¹ûËÑË÷½á¹û²»Îª¿Õ
+	//åœ¨Userè¡¨ä¸­å¯»æ‰¾è¯¥è´¦å·å¯¹åº”çš„å¯†ç 
+/*TODO SQL : åœ¨Userè¡¨æ‰¾Account = Accçš„è¡Œï¼Œå¾—åˆ°Passwordï¼ˆstringï¼‰*/
+	string Password;
+	if () //å¦‚æœæœç´¢ç»“æœä¸ä¸ºç©º
 	{
 		if (Password == PWord)
 		{
@@ -47,30 +45,36 @@ string UserManage::Logging(string buf)//buf:ÕËºÅ£¬ÃÜÂë
 	}
 }
 
-string UserManage::LogSuccess(string buf)//buf:ÕËºÅ£¬ÃÜÂë
+string UserManage::LogSuccess(string buf)//buf:è´¦å·#å¯†ç ; return:è´¦å·#æ˜µç§°#å¤´åƒ#æ‰€æœ‰å¥½å‹è´¦å·#æ‰€æœ‰ç¾¤èŠç¼–å·
 {
-		//×Ö·û´®·Ö¸î
+		//å­—ç¬¦ä¸²åˆ†å‰²
 	string Acc;
 	string PWord;
-	char Buffer[1024];	//½«´«ÈëµÄstring×ªÎªchar *ÒÔÊ¹ÓÃsscanfº¯Êı
+	char Buffer[1024];	//å°†ä¼ å…¥çš„stringè½¬ä¸ºchar *ä»¥ä½¿ç”¨sscanfå‡½æ•°
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%s,%s", &Acc, &PWord);
+	sscanf(Buffer, "%s#%s", &Acc, &PWord);
 
-	//Êı¾İ¿â²Ù×÷
-/*TODO SQL : ÔÚUser±íÖĞËÑË÷Account = Acc£¬µÃµ½Account, UName, Portrait£¨string)*/
-	string Data1 = to_string(Account) + ',' + UName + ',' + to_string(Portrait);
+	//æ•°æ®åº“æ“ä½œ
+/*TODO SQL : åœ¨Userè¡¨ä¸­æœç´¢Account = Accï¼Œå¾—åˆ°Account(int), UName(string), Portraitï¼ˆint)*/
+	int Account, Portrait;
+	string UName;
+	string Data1 = to_string(Account) + '#' + UName + '#' + to_string(Portrait);
 
 
-	//ºÃÓÑÕËºÅ£¨Í¬ÕËºÅêÇ³ÆÍ·ÏñÒ»Æğ×÷Îª·µ»ØÖµ£©QUE:¶à¸öºÃÓÑÕËºÅÔõÑù·µ»Ø£¿£¨ºÃÓÑ1|ºÃÓÑ2|ºÃÓÑ3|£©£¿
-/*TODO SQL : ÔÚCluster±íÖĞËÑË÷CMember LIKE %Acc% ÇÒ COwner == 1,·µ»ØCMember[ACC1|ACC2]×Ö·û´®Êı×éĞÎÊ½vector<string> Friend*/
+	//å¥½å‹è´¦å·ï¼ˆåŒè´¦å·æ˜µç§°å¤´åƒä¸€èµ·ä½œä¸ºè¿”å›å€¼ï¼‰QUE:å¤šä¸ªå¥½å‹è´¦å·æ€æ ·è¿”å›ï¼Ÿï¼ˆå¥½å‹1|å¥½å‹2|å¥½å‹3|ï¼‰ï¼Ÿ
+/*TODO SQL : åœ¨Clusterè¡¨ä¸­æœç´¢CMember LIKE %Acc% ä¸” COwner == 1,è¿”å›CMember[ACC1|ACC2]å­—ç¬¦ä¸²æ•°ç»„å½¢å¼vector<string> Friend*/
 	vector<string> Friend;
 	string AllFriend = "";
 	for (int i = 0; i < Friend.size(); i++)
 	{
-		AllFriend += Friend[i] + "|";
+		string F, A;
+		char Buffer[1024];	//å°†ä¼ å…¥çš„stringè½¬ä¸ºchar *ä»¥ä½¿ç”¨sscanfå‡½æ•°
+		strcpy(Buffer, Friend[i].c_str());
+		sscanf(Buffer, "%s|%s", &A, &F);
+		AllFriend += F + "|";
 	}
-	//ÈºÁÄ±àºÅ£¨Í¬ÕËºÅêÇ³ÆÍ·ÏñÒ»Æğ×÷Îª·µ»ØÖµ£©QUE:¶à¸öÈºÁÄÔõÑù·µ»Ø£¿£¨Èº1|Èº2|Èº3|£©£¿
-/*TODO SQL : ÔÚCluster±íÖĞËÑË÷CMember LIKE% Acc% ÇÒ COwner != 1, ·µ»ØCNumÊı×éĞÎÊ½vector<int> Group*/
+	//ç¾¤èŠç¼–å·ï¼ˆåŒè´¦å·æ˜µç§°å¤´åƒä¸€èµ·ä½œä¸ºè¿”å›å€¼ï¼‰QUE:å¤šä¸ªç¾¤èŠæ€æ ·è¿”å›ï¼Ÿï¼ˆç¾¤1|ç¾¤2|ç¾¤3|ï¼‰ï¼Ÿ
+/*TODO SQL : åœ¨Clusterè¡¨ä¸­æœç´¢CMember LIKE% Acc% ä¸” COwner != 1, è¿”å›CNumæ•°ç»„å½¢å¼vector<int> Group*/
 	vector<int> Group;
 	string AllGroup = "";
 	for (int i = 0; i < Group.size(); i++)
@@ -78,64 +82,199 @@ string UserManage::LogSuccess(string buf)//buf:ÕËºÅ£¬ÃÜÂë
 		AllFriend += to_string(Group[i]) + "|";
 	}
 
-	return Data1 + AllFriend + AllGroup;
-	//Èº×éÁÄÌìĞÅÏ¢£¨Ã¿ÕÒµ½Ò»ÌõÓ¦¸Ã·¢ËÍµÄĞÅÏ¢¾ÍÖ±½Ó·¢ËÍ¸øµ±Ç°ÓÃ»§£©
-/*TODO SQL : ÔÚUser±íÖĞËÑË÷Account == Acc, ·µ»ØOffLineTime, Socket*/
-/*TODO SQL : ÔÚCluster±íÖĞËÑË÷CMember LIKE% Acc% £¬·µ»ØMsgRecord£¨vector<string> MsgRecord)*/
+	return Data1 + '#' + AllFriend + '#' +  AllGroup;
+	//ç¾¤ç»„èŠå¤©ä¿¡æ¯ï¼ˆæ¯æ‰¾åˆ°ä¸€æ¡åº”è¯¥å‘é€çš„ä¿¡æ¯å°±ç›´æ¥å‘é€ç»™å½“å‰ç”¨æˆ·ï¼‰
+/*TODO SQL : åœ¨Userè¡¨ä¸­æœç´¢Account == Acc, è¿”å›OffLineTime, Socket*/
+	string OffLineTime;
+	int Socket;
+/*TODO SQL : åœ¨Clusterè¡¨ä¸­æœç´¢CMember LIKE% Acc% ï¼Œè¿”å›MsgRecordï¼ˆvector<string> MsgRecord)*/
 	vector<string> MsgRecord;
 	for (int i = 0; i < MsgRecord.size(); i++)
 	{
 		string msg = MsgRecord[i];
-		//×Ö·û´®²ğ·Ö
+		//å­—ç¬¦ä¸²æ‹†åˆ†
 		string Time, Acc, Msg;
-		char Buffer[1024];	//½«´«ÈëµÄstring×ªÎªchar *ÒÔÊ¹ÓÃsscanfº¯Êı
+		char Buffer[1024];	//å°†ä¼ å…¥çš„stringè½¬ä¸ºchar *ä»¥ä½¿ç”¨sscanfå‡½æ•°
 		strcpy(Buffer, msg.c_str());
 		sscanf(Buffer, "%s,%s,%s", &Time, &Acc, &Msg);
 		
-		if (Time > OffLineTime)	//Èç¹ûÏûÏ¢Ê±¼äÍíÓÚÉÏ´ÎÏÂÏßÊ±¼ä   £¨Ê±¼ä±È½ÏÔõÃ´×ö£¿£¿£¿£©
+		if (Time > OffLineTime)	//å¦‚æœæ¶ˆæ¯æ—¶é—´æ™šäºä¸Šæ¬¡ä¸‹çº¿æ—¶é—´   ï¼ˆå­—ç¬¦ä¸²æ¯”è¾ƒæ˜¯é€ä½æ¯”è¾ƒï¼‰
 		{
 			SendMsg(msg, Socket);
 		}
 	}
 }
 
-string UserManage::Receive(string buf)//buf:Èº×é±àºÅ£¬ÓÃ»§ÕËºÅ£¬·¢ËÍÊ±¼ä£¬ÏûÏ¢ÄÚÈİ
+string UserManage::Receive(string buf)//buf:ç¾¤ç»„ç¼–å·#ç”¨æˆ·è´¦å·#å‘é€æ—¶é—´#æ¶ˆæ¯å†…å®¹; return:Done(è¡¨ç¤ºæ”¶åˆ°æ¶ˆæ¯ä¸”å·²å‘å‡ºï¼‰
 {
-		//×Ö·û´®·Ö¸î
+		//å­—ç¬¦ä¸²åˆ†å‰²
 	string CNum, Acc, Time, Msg;
-	char Buffer[1024];	//½«´«ÈëµÄstring×ªÎªchar *ÒÔÊ¹ÓÃsscanfº¯Êı
+	char Buffer[1024];	//å°†ä¼ å…¥çš„stringè½¬ä¸ºchar *ä»¥ä½¿ç”¨sscanfå‡½æ•°
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%s,%s,%s,%s", &CNum, &Acc, &Time, &Msg);
-	//Èº·¢ÏûÏ¢
-	string SMsg = Time + "," + Acc + "," + Msg;//Èº×éÁÄÌì¼ÇÂ¼µÄ¸ñÊ½
-/*TODO SQL : ÔÚCluster±íÖĞËÑË÷CNum = CNum,µÃµ½CName,COwner,CNum,CMember(string)£¬¼ÇÎªData0,Õâ¸öËÑË÷¿ÉÄÜ»áÓĞ¶àĞĞ½á¹û£¬Ö»È¡Ò»ĞĞ¾ÍĞĞ*/
-	string Data2 = Data0;
-	Data2 += "," + SMsg;
-/*TODO SQL : ÏòCluster±íÖĞÌí¼ÓÒ»ĞĞ£¬ÄÚÈİÎªData0£¨string, ¶ººÅ¸ô¿ª´«Èë£©*/
-/*TODO SQL : ÔÚCluster±íÖĞËÑË÷CNum = CNum,µÃµ½CMember(string,|¸ô¿ª),Õâ¸öËÑË÷¿ÉÄÜ»áÓĞ¶àĞĞ½á¹û£¬Ö»È¡Ò»ĞĞ¾ÍĞĞ*/
-		//µÃµ½Ã¿¸öÈº×é³ÉÔ±µÄÕËºÅ
+	sscanf(Buffer, "%s#%s#%s#%s", &CNum, &Acc, &Time, &Msg);
+	//ç¾¤å‘æ¶ˆæ¯
+	string SMsg = Time + "#" + Acc + "#" + Msg + "11";//ç¾¤ç»„èŠå¤©è®°å½•çš„æ ¼å¼
+/*TODO SQL : åœ¨Clusterè¡¨ä¸­æœç´¢CNum = CNum,å¾—åˆ°MsgRecord(string)*/
+	string MsgRecord;
+	string RMsg = SMsg + "|" + MsgRecord;
+/*TODO SQL : åœ¨Clusterè¡¨ä¸­æœç´¢CNum = CNum,æ›´æ–°MsgRecordä¸ºRMsg*/
+/*TODO SQL : åœ¨Clusterè¡¨ä¸­æœç´¢CNum = CNum,å¾—åˆ°CMember(string,|éš”å¼€)*/
+	string CMember;
+		//å¾—åˆ°æ¯ä¸ªç¾¤ç»„æˆå‘˜çš„è´¦å·
 	char* CM = new char[CMember.length() + 1];
 	strcpy(CM, CMember.c_str());	//CMember(string)->CM(char*)
 	char* User;
-	User = strtok(CM, "|");//×Ö·û´®²ğ·Östrtok()
+	User = strtok(CM, "|");//å­—ç¬¦ä¸²æ‹†åˆ†strtok()
 	while (User != NULL)
 	{
 		Acc = atoi(User);
-		//¶ÔÃ¿¸öÈº×é³ÉÔ±µÄÕËºÅAcc£º
-/*TODO SQL : ÔÚUser±íÖĞËÑË÷Account = Acc£¬µÃµ½LogStatus£¨int)*/
+		//å¯¹æ¯ä¸ªç¾¤ç»„æˆå‘˜çš„è´¦å·Accï¼š
+/*TODO SQL : åœ¨Userè¡¨ä¸­æœç´¢Account = Accï¼Œå¾—åˆ°LogStatusï¼ˆint)*/
+		int LogStatus;
 		if (LogStatus == 1)
 		{
-			//ÔÚUser±íÖĞËÑË÷Account=Acc£¬µÃµ½Socket£¨int)
+			//åœ¨Userè¡¨ä¸­æœç´¢Account=Accï¼Œå¾—åˆ°Socketï¼ˆint)
+/*TODO SQL : åœ¨Userè¡¨ä¸­æœç´¢Account = Accï¼Œå¾—åˆ°Socketï¼ˆint)*/
+			int Socket;
 			SendMsg(SMsg, Socket);
 		}
 		User = strtok(NULL, "|");
 	}
 
-	return string();
+	return string("Done");
 }
 
-string UserManage::SendMsg(string buf, int confd)//µ¥·¢ÏûÏ¢£¬buf:·¢ËÍÊ±¼ä£¬·¢ĞÅÈËÕËºÅ£¬ÏûÏ¢ÄÚÈİ£»confd:ÊÕĞÅÈËsocket
+string UserManage::SendMsg(string buf, int confd)//å•å‘æ¶ˆæ¯ï¼Œbuf:å‘é€æ—¶é—´ï¼Œå‘ä¿¡äººè´¦å·ï¼Œæ¶ˆæ¯å†…å®¹ï¼›confd:æ”¶ä¿¡äººsocket;;;return: Done(æ”¶ä¿¡äººå·²æ”¶åˆ°)
 {
 	write(confd, buf, sizeof(buf));
-	return string();
+	return string("Done");
+}
+
+string UserManage::SearchUser(string buf)//buf:ç”¨æˆ·è´¦å·; return : è´¦å·#æ˜µç§°#å¤´åƒ#ç™»å½•çŠ¶æ€#ä¸Šæ¬¡ä¸‹çº¿æ—¶é—´ / è¯¥ç”¨æˆ·ä¸å­˜åœ¨
+{
+	int account = atoi(buf.c_str());//è¢«æœç´¢ç”¨æˆ·çš„è´¦å·ç”±stringè½¬ä¸ºintæ ¼å¼
+	string data;
+/*TODO SQL : åœ¨Userè¡¨Accountåˆ—ä¸­æœç´¢accountï¼Œå¾—åˆ°é‚£ä¸€è¡Œçš„ä¿¡æ¯:Account(int),UName(string),Portrait(int),LogStatus(int),OffLineTime(string)*/
+	int Account, Portrait, LogStatus;
+	string UName, OffLineTime;
+	if () /*å¦‚æœè¿”å›ç»“æœä¸ä¸ºç©º*/
+	{
+		data = to_string(Account) + "#" + UName + to_string(Portrait) + "#" + to_string(LogStatus) + OffLineTime;
+		return data;
+	}
+/*TODO SQL : åœ¨Userè¡¨UNameåˆ—ä¸­æœç´¢bufï¼Œå¾—åˆ°é‚£ä¸€è¡Œçš„ä¿¡æ¯:Account(int),UName(string),Portrait(int),LogStatus(int),OffLineTime(string)*/
+	else if ()/*å¦‚æœè¿”å›ç»“æœä¸ä¸ºç©º*/
+	{
+		data = to_string(Account) + "#" + UName + to_string(Portrait) + "#" + to_string(LogStatus) + OffLineTime;
+		return data;
+	}
+	else {
+		return string("The User Does Not Exist!");
+	}
+}
+
+string UserManage::AddFriend1(string buf)//buf:ç”¨æˆ·è´¦å·#å¥½å‹è´¦å·#å¤‡æ³¨ä¿¡æ¯;è¯¥å‡½æ•°ï¼šå‘é€å¥½å‹è¯·æ±‚ï¼›return : sendedï¼ˆå·²å‘é€ï¼‰
+{
+	//å­—ç¬¦ä¸²åˆ†å‰²
+	string Acc1;
+	string Acc2;
+	string Msg;
+	char Buffer[1024];	//å°†ä¼ å…¥çš„stringè½¬ä¸ºchar *ä»¥ä½¿ç”¨sscanfå‡½æ•°
+	strcpy(Buffer, buf.c_str());
+	sscanf(Buffer, "%s,%s,%s", &Acc1, &Acc2, &Msg);
+	//æ‰¾åˆ°è¢«é‚€è¯·äººçš„ä¿¡æ¯ï¼ˆé€šè¿‡Acc2æ‰¾åˆ°Socketã€UNameï¼Œè®°ä¸ºconfd,UNameï¼‰    
+/*åœ¨Userè¡¨ä¸­æœç´¢Account = Acc2,å¾—åˆ°Socket(int)*/
+	int Socket;
+/*åœ¨Userè¡¨ä¸­æœç´¢Account = Acc1,å¾—åˆ°UName(string)*/
+	string UName;
+
+	//æ‹¼æ¥éœ€è¦å‘é€çš„ä¿¡æ¯,å‘é€
+	string SMsg = UName + "," + Acc1 + "," + to_string(Socket) + "," + "7";
+	SendMsg(SMsg,Socket); //å°†å¥½å‹è¯·æ±‚ä»¥æ¶ˆæ¯çš„å½¢å¼å‘ç»™è¢«é‚€è¯·äºº   (å¥½å‹è¯·æ±‚ç›´æ¥ä»¥æ¶ˆæ¯çš„å½¢å¼å‘é€å—ï¼Ÿï¼Ÿï¼Ÿï¼‰
+	//return SMsg;
+	return string("sended");
+}
+
+string UserManage::AddFriend2(string buf)//buf:accept/reject#ç”¨æˆ·è´¦å·#å¥½å‹è´¦å·ï¼›return : accept/reject
+{
+	//å­—ç¬¦ä¸²åˆ†å‰²
+	string Acc1;
+	string Acc2;
+	string A_R;
+	char Buffer[1024];	//å°†ä¼ å…¥çš„stringè½¬ä¸ºchar *ä»¥ä½¿ç”¨sscanfå‡½æ•°
+	strcpy(Buffer, buf.c_str());
+	sscanf(Buffer, "%s#%s#%s", &A_R, &Acc1, &Acc2);
+
+	//æ‰¾åˆ°é‚€è¯·äººï¼ˆæ ¹æ®Accountå¾—åˆ°Socket,è®°ä¸ºconfd(int))
+/*åœ¨Userè¡¨ä¸­æœç´¢Account = Acc1,å¾—åˆ°Socket(int)*/
+	int Socket;
+	//æ‰¾åˆ°è¢«é‚€è¯·äººï¼ˆæ ¹æ®Accountå¾—åˆ°UName(string)) 
+/*åœ¨Userè¡¨ä¸­æœç´¢Account = Acc2,å¾—åˆ°UName(string)*/
+	string UName;
+
+	if (A_R == "reject")
+	{
+		//ç»™é‚€è¯·äººå‘é€ä¿¡æ¯
+		string SMsg = "You are rejected by " + UName + Acc2 + "7";
+		SendMsg(SMsg, Socket); //è¿™ä¸ªè¿”å›ç»™é‚€è¯·äººçš„ä¿¡æ¯æ˜¯ç›´æ¥ä»¥æ¶ˆæ¯çš„å½¢å¼å‘é€
+		return string("reject");
+	}
+	else if (A_R == "accept")
+	{
+		//åˆ›å»ºç¾¤ç»„ï¼Œå³åœ¨ç¾¤ç»„è¡¨ä¸­æ·»åŠ ä¸€æ•´è¡Œ
+		string data;
+		string Member = Acc1 + "|" + Acc2;
+/*Clusterè¡¨ï¼Œå¾—åˆ°CNumä¸€åˆ—vector<int> CNum*/
+		vector<int> CNum;
+		vector<int>::iterator itMax = max_element(CNum.begin(), CNum.end());
+		int MaxCNum = *itMax; 
+		data = "" + '#' + '1' + '#' + to_string(MaxCNum+ 1) + '#' + Member + '#' + "";//ç¾¤ç»„åå’ŒèŠå¤©è®°å½•ä¸ºç©º
+/*Clusterè¡¨ï¼Œæ–°å¢ä¸€è¡Œï¼Œæ•°æ®ä¸ºdata*/
+
+			//ç»™é‚€è¯·äººå‘é€ä¿¡æ¯
+		string SMsg = UName + ',' + Acc2 + " accepted your invitation." + "7";
+		SendMsg(SMsg, Socket);
+		return string("accept");
+	}
+}
+
+string UserManage::ChangeData(string buf)//buf:ç”¨æˆ·è´¦å·#è¦ä¿®æ”¹çš„å±æ€§å#ä¿®æ”¹åçš„å†…å®¹;return : Success(æˆåŠŸå®Œæˆï¼‰
+{
+	//å­—ç¬¦ä¸²åˆ†å‰²
+	string Acc;
+	string Col;
+	string CData;
+	char Buffer[1024];	//å°†ä¼ å…¥çš„stringè½¬ä¸ºchar *ä»¥ä½¿ç”¨sscanfå‡½æ•°
+	strcpy(Buffer, buf.c_str());
+	sscanf(Buffer, "%s#%s#%s", &Acc, &Col, &CData);
+
+	int acc = atoi(Acc.c_str());
+/*TODO SQL : Userè¡¨ï¼Œåœ¨Account= accçš„è¡Œï¼Œæ›´æ–°Col = CData*/
+
+	return string("Success");
+}
+
+string UserManage::SelecteAccount(string buf)//buf:ç”¨æˆ·è´¦å·(string);return : Success(æˆåŠŸå®Œæˆï¼‰
+{
+	buf = atoi(buf.c_str());//string->int
+/*TODO SQL : Userè¡¨ï¼Œåœ¨Account= Accçš„è¡Œï¼Œåˆ é™¤ä¸€æ•´è¡Œ*/
+	return string("Success");
+}
+
+string UserManage::SelecteGroup(string buf)//buf:ç¾¤ç»„ç¼–å·#å‘å‡ºè¯·æ±‚çš„ç”¨æˆ·è´¦å·;return : Success(æˆåŠŸå®Œæˆï¼‰/Failedï¼ˆæ“ä½œæ— æ•ˆï¼‰
+{
+	//å­—ç¬¦ä¸²åˆ†å‰²
+	string CNum, Acc;
+	char Buffer[1024];	//å°†ä¼ å…¥çš„stringè½¬ä¸ºchar *ä»¥ä½¿ç”¨sscanfå‡½æ•°
+	strcpy(Buffer, buf.c_str());
+	sscanf(Buffer, "%s#%s", &CNum, &Acc);
+	//æŸ¥çœ‹è¯¥ç¾¤ç¾¤ä¸»
+/*TODO SQL : Clusterè¡¨, CNum = CNumçš„è¡Œï¼Œå¾—åˆ°COwner(string)*/
+	string COwner;
+	if (COwner == Acc || COwner == "1")//è¯¥ç”¨æˆ·æ˜¯ç¾¤ä¸»åˆ™å¯ä»¥è§£æ•£è¯¥ç¾¤ï¼Œå¦åˆ™ä¸å¯ä»¥
+	{
+/*TODO SQL : Clusterè¡¨ï¼ŒCNum = CNumçš„è¡Œï¼Œåˆ é™¤ä¸€æ•´è¡Œ*/
+		return string("Success");
+	}
+	return string("Failed");
 }
