@@ -27,7 +27,8 @@ string UserManage::Logging(string buf)//buf:账号，密码
 
 	//在User表中寻找该账号对应的密码
 /*TODO SQL : 在User表找Account = Acc的行，得到Password（string）*/
-	if (sqlite3_exec() == SQLITE_OK) //如果搜索结果不为空
+	string Password;
+	if () //如果搜索结果不为空
 	{
 		if (Password == PWord)
 		{
@@ -55,6 +56,8 @@ string UserManage::LogSuccess(string buf)//buf:账号，密码
 
 	//数据库操作
 /*TODO SQL : 在User表中搜索Account = Acc，得到Account(int), UName(string), Portrait（int)*/
+	int Account, Portrait;
+	string UName;
 	string Data1 = to_string(Account) + ',' + UName + ',' + to_string(Portrait);
 
 
@@ -82,6 +85,8 @@ string UserManage::LogSuccess(string buf)//buf:账号，密码
 	return Data1 + AllFriend + AllGroup;
 	//群组聊天信息（每找到一条应该发送的信息就直接发送给当前用户）
 /*TODO SQL : 在User表中搜索Account == Acc, 返回OffLineTime, Socket*/
+	string OffLineTime;
+	int Socket;
 /*TODO SQL : 在Cluster表中搜索CMember LIKE% Acc% ，返回MsgRecord（vector<string> MsgRecord)*/
 	vector<string> MsgRecord;
 	for (int i = 0; i < MsgRecord.size(); i++)
@@ -110,9 +115,11 @@ string UserManage::Receive(string buf)//buf:群组编号，用户账号，发送
 	//群发消息
 	string SMsg = Time + "#" + Acc + "#" + Msg;//群组聊天记录的格式
 /*TODO SQL : 在Cluster表中搜索CNum = CNum,得到MsgRecord(string)*/
-	string RMsg = MsgRecord + "|" + SMsg;
+	string MsgRecord;
+	string RMsg = SMsg + "|" + MsgRecord;
 /*TODO SQL : 在Cluster表中搜索CNum = CNum,更新MsgRecord为RMsg*/
 /*TODO SQL : 在Cluster表中搜索CNum = CNum,得到CMember(string,|隔开)*/
+	string CMember;
 		//得到每个群组成员的账号
 	char* CM = new char[CMember.length() + 1];
 	strcpy(CM, CMember.c_str());	//CMember(string)->CM(char*)
@@ -123,9 +130,12 @@ string UserManage::Receive(string buf)//buf:群组编号，用户账号，发送
 		Acc = atoi(User);
 		//对每个群组成员的账号Acc：
 /*TODO SQL : 在User表中搜索Account = Acc，得到LogStatus（int)*/
+		int LogStatus;
 		if (LogStatus == 1)
 		{
 			//在User表中搜索Account=Acc，得到Socket（int)
+/*TODO SQL : 在User表中搜索Account = Acc，得到Socket（int)*/
+			int Socket;
 			SendMsg(SMsg, Socket);
 		}
 		User = strtok(NULL, "|");
@@ -145,6 +155,8 @@ string UserManage::SearchUser(string buf)//buf:用户账号
 	int account = atoi(buf.c_str());//被搜索用户的账号由string转为int格式
 	string data;
 /*TODO SQL : 在User表Account列中搜索account，得到那一行的信息:Account(int),UName(string),Portrait(int),LogStatus(int),OffLineTime(string)*/
+	int Account, Portrait, LogStatus;
+	string UName, OffLineTime;
 	if () /*如果返回结果不为空*/
 	{
 		data = to_string(Account) + "#" + UName + to_string(Portrait) + "#" + to_string(LogStatus) + OffLineTime;
@@ -171,11 +183,13 @@ string UserManage::AddFriend1(string buf)//buf:用户账号，好友账号，备
 	strcpy(Buffer, buf.c_str());
 	sscanf(Buffer, "%s,%s,%s", &Acc1, &Acc2, &Msg);
 	//找到被邀请人的信息（通过Acc2找到Socket、UName，记为confd,UName）    
-/*TODO SQL :在User表中搜索Account = Acc2,得到Socket(int)*/
-/*TODO SQL :在User表中搜索Account = Acc1,得到UName(string)*/
-	
+/*在User表中搜索Account = Acc2,得到Socket(int)*/
+	int Socket;
+/*在User表中搜索Account = Acc1,得到UName(string)*/
+	string UName;
+
 	//拼接需要发送的信息,发送
-	string SMsg = UName + "," + Acc1 + "," + Socket + "," + "7";
+	string SMsg = UName + "," + Acc1 + "," + to_string(Socket) + "," + "7";
 	SendMsg(SMsg,Socket); //将好友请求以消息的形式发给被邀请人   (好友请求直接以消息的形式发送吗？？？）
 	//return SMsg;
 }
@@ -191,14 +205,16 @@ string UserManage::AddFriend2(string buf)//buf:accept|reject,用户账号，好�
 	sscanf(Buffer, "%s,%s,%s", &A_R, &Acc1, &Acc2);
 
 	//找到邀请人（根据Account得到Socket,记为confd(int))
-/*TODO SQL :在User表中搜索Account = Acc1,得到Socket(int)*/
+/*在User表中搜索Account = Acc1,得到Socket(int)*/
+	int Socket;
 	//找到被邀请人（根据Account得到UName(string)) 
-/*TODO SQL :在User表中搜索Account = Acc2,得到UName(string)*/
+/*在User表中搜索Account = Acc2,得到UName(string)*/
+	string UName;
 
 	if (A_R == "reject")
 	{
 		//给邀请人发送信息
-		string SMsg = "You are rejected by " + UName + to_string(Acc2);
+		string SMsg = "You are rejected by " + UName + Acc2;
 		//SendMsg(SMsg, confd); //这个返回给邀请人的信息是直接以消息的形式发送还是以return？？？
 		return SMsg;
 	}
@@ -207,14 +223,15 @@ string UserManage::AddFriend2(string buf)//buf:accept|reject,用户账号，好�
 		//创建群组，即在群组表中添加一整行
 		string data;
 		string Member = Acc1 + "|" + Acc2;
-/*TODO SQL :Cluster表，得到CNum一列vector<int> CNum*/
+/*Cluster表，得到CNum一列vector<int> CNum*/
+		vector<int> CNum;
 		vector<int>::iterator itMax = max_element(CNum.begin(), CNum.end());
 		int MaxCNum = *itMax; 
 		data = "" + '#' + '1' + '#' + to_string(MaxCNum+ 1) + '#' + Member + '#' + "";//群组名和聊天记录为空
-/*TODO SQL :Cluster表，新增一行，数据为data*/
+/*Cluster表，新增一行，数据为data*/
 
 			//给邀请人发送信息
-		string SMsg = UName + ',' + to_string(Acc2) + " accepted your invitation.";
+		string SMsg = UName + ',' + Acc2 + " accepted your invitation.";
 		//SendMsg(SMsg, confd);
 		return SMsg;
 	}
@@ -242,7 +259,7 @@ string UserManage::SelecteAccount(string buf)//buf:用户账号，string形式
 	return string("Success");
 }
 
-string UserManage::SelecteGroup(string buf)//buf:群组编号(string形式),发出请求的用户账号(string)
+string UserManage::SelecteGroup(string buf)//buf:群组编号,发出请求的用户账号
 {
 	//字符串分割
 	string CNum, Acc;
