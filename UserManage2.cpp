@@ -1,14 +1,14 @@
 #include "UserManage.h"
 
 
-string UserManage::Register(string buf) //buf:nickname,password,5
+string UserManage::Register(string buf) //buf:nickname#password#5; return:账号(string)
 {
 	string NickName;
 	string PassWord;
 
 	char Buffer[48];	//将传入的string转为char *以使用sscanf函数
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%s,%s,n", &NickName, &PassWord);
+	sscanf(Buffer, "%s#%s#%d", &NickName, &PassWord);
 /*TODO SQL : 向User表中添加一整行data*/
 	string data = to_string(MaxAccount) + "#" + NickName + "#" + PassWord + "#" + to_string(0) + "#" + to_string(0) + "#" + to_string(0) + "#" + to_string(0);
 	MaxAccount++;
@@ -16,14 +16,14 @@ string UserManage::Register(string buf) //buf:nickname,password,5
 	return to_string(MaxAccount - 1);
 
 }
-string UserManage::Logging(string buf)//buf:账号，密码
+string UserManage::Logging(string buf)//buf:账号#密码; return:成功/失败/不存在
 {
 	//字符串分割
 	string Acc;
 	string PWord;
 	char Buffer[1024];	//将传入的string转为char *以使用sscanf函数
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%s,%s", &Acc, &PWord);
+	sscanf(Buffer, "%s#%s", &Acc, &PWord);
 
 	//在User表中寻找该账号对应的密码
 /*TODO SQL : 在User表找Account = Acc的行，得到Password（string）*/
@@ -45,20 +45,20 @@ string UserManage::Logging(string buf)//buf:账号，密码
 	}
 }
 
-string UserManage::LogSuccess(string buf)//buf:账号，密码
+string UserManage::LogSuccess(string buf)//buf:账号#密码; return:账号#昵称#头像#所有好友账号#所有群聊编号
 {
 		//字符串分割
 	string Acc;
 	string PWord;
 	char Buffer[1024];	//将传入的string转为char *以使用sscanf函数
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%s,%s", &Acc, &PWord);
+	sscanf(Buffer, "%s#%s", &Acc, &PWord);
 
 	//数据库操作
 /*TODO SQL : 在User表中搜索Account = Acc，得到Account(int), UName(string), Portrait（int)*/
 	int Account, Portrait;
 	string UName;
-	string Data1 = to_string(Account) + ',' + UName + ',' + to_string(Portrait);
+	string Data1 = to_string(Account) + '#' + UName + '#' + to_string(Portrait);
 
 
 	//好友账号（同账号昵称头像一起作为返回值）QUE:多个好友账号怎样返回？（好友1|好友2|好友3|）？
@@ -70,7 +70,7 @@ string UserManage::LogSuccess(string buf)//buf:账号，密码
 		string F, A;
 		char Buffer[1024];	//将传入的string转为char *以使用sscanf函数
 		strcpy(Buffer, Friend[i].c_str());
-		sscanf(Buffer, "%s,%s", &A, &F);
+		sscanf(Buffer, "%s|%s", &A, &F);
 		AllFriend += F + "|";
 	}
 	//群聊编号（同账号昵称头像一起作为返回值）QUE:多个群聊怎样返回？（群1|群2|群3|）？
@@ -82,7 +82,7 @@ string UserManage::LogSuccess(string buf)//buf:账号，密码
 		AllFriend += to_string(Group[i]) + "|";
 	}
 
-	return Data1 + AllFriend + AllGroup;
+	return Data1 + '#' + AllFriend + '#' +  AllGroup;
 	//群组聊天信息（每找到一条应该发送的信息就直接发送给当前用户）
 /*TODO SQL : 在User表中搜索Account == Acc, 返回OffLineTime, Socket*/
 	string OffLineTime;
@@ -105,15 +105,15 @@ string UserManage::LogSuccess(string buf)//buf:账号，密码
 	}
 }
 
-string UserManage::Receive(string buf)//buf:群组编号，用户账号，发送时间，消息内容
+string UserManage::Receive(string buf)//buf:群组编号#用户账号#发送时间#消息内容; return:Done(表示收到消息且已发出）
 {
 		//字符串分割
 	string CNum, Acc, Time, Msg;
 	char Buffer[1024];	//将传入的string转为char *以使用sscanf函数
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%s,%s,%s,%s", &CNum, &Acc, &Time, &Msg);
+	sscanf(Buffer, "%s#%s#%s#%s", &CNum, &Acc, &Time, &Msg);
 	//群发消息
-	string SMsg = Time + "#" + Acc + "#" + Msg;//群组聊天记录的格式
+	string SMsg = Time + "#" + Acc + "#" + Msg + "11";//群组聊天记录的格式
 /*TODO SQL : 在Cluster表中搜索CNum = CNum,得到MsgRecord(string)*/
 	string MsgRecord;
 	string RMsg = SMsg + "|" + MsgRecord;
@@ -141,16 +141,16 @@ string UserManage::Receive(string buf)//buf:群组编号，用户账号，发送
 		User = strtok(NULL, "|");
 	}
 
-	return string();
+	return string("Done");
 }
 
-string UserManage::SendMsg(string buf, int confd)//单发消息，buf:发送时间，发信人账号，消息内容；confd:收信人socket
+string UserManage::SendMsg(string buf, int confd)//单发消息，buf:发送时间，发信人账号，消息内容；confd:收信人socket;;;return: Done(收信人已收到)
 {
 	write(confd, buf, sizeof(buf));
-	return string();
+	return string("Done");
 }
 
-string UserManage::SearchUser(string buf)//buf:用户账号
+string UserManage::SearchUser(string buf)//buf:用户账号; return : 账号#昵称#头像#登录状态#上次下线时间 / 该用户不存在
 {
 	int account = atoi(buf.c_str());//被搜索用户的账号由string转为int格式
 	string data;
@@ -173,7 +173,7 @@ string UserManage::SearchUser(string buf)//buf:用户账号
 	}
 }
 
-string UserManage::AddFriend1(string buf)//buf:用户账号，好友账号，备注信息;该函数：发送好友请求
+string UserManage::AddFriend1(string buf)//buf:用户账号#好友账号#备注信息;该函数：发送好友请求；return : sended（已发送）
 {
 	//字符串分割
 	string Acc1;
@@ -192,9 +192,10 @@ string UserManage::AddFriend1(string buf)//buf:用户账号，好友账号，备
 	string SMsg = UName + "," + Acc1 + "," + to_string(Socket) + "," + "7";
 	SendMsg(SMsg,Socket); //将好友请求以消息的形式发给被邀请人   (好友请求直接以消息的形式发送吗？？？）
 	//return SMsg;
+	return string("sended");
 }
 
-string UserManage::AddFriend2(string buf)//buf:accept|reject,用户账号，好友账号
+string UserManage::AddFriend2(string buf)//buf:accept/reject#用户账号#好友账号；return : accept/reject
 {
 	//字符串分割
 	string Acc1;
@@ -202,7 +203,7 @@ string UserManage::AddFriend2(string buf)//buf:accept|reject,用户账号，好�
 	string A_R;
 	char Buffer[1024];	//将传入的string转为char *以使用sscanf函数
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%s,%s,%s", &A_R, &Acc1, &Acc2);
+	sscanf(Buffer, "%s#%s#%s", &A_R, &Acc1, &Acc2);
 
 	//找到邀请人（根据Account得到Socket,记为confd(int))
 /*在User表中搜索Account = Acc1,得到Socket(int)*/
@@ -214,9 +215,9 @@ string UserManage::AddFriend2(string buf)//buf:accept|reject,用户账号，好�
 	if (A_R == "reject")
 	{
 		//给邀请人发送信息
-		string SMsg = "You are rejected by " + UName + Acc2;
-		//SendMsg(SMsg, confd); //这个返回给邀请人的信息是直接以消息的形式发送还是以return？？？
-		return SMsg;
+		string SMsg = "You are rejected by " + UName + Acc2 + "7";
+		SendMsg(SMsg, Socket); //这个返回给邀请人的信息是直接以消息的形式发送
+		return string("reject");
 	}
 	else if (A_R == "accept")
 	{
@@ -231,13 +232,13 @@ string UserManage::AddFriend2(string buf)//buf:accept|reject,用户账号，好�
 /*Cluster表，新增一行，数据为data*/
 
 			//给邀请人发送信息
-		string SMsg = UName + ',' + Acc2 + " accepted your invitation.";
-		//SendMsg(SMsg, confd);
-		return SMsg;
+		string SMsg = UName + ',' + Acc2 + " accepted your invitation." + "7";
+		SendMsg(SMsg, Socket);
+		return string("accept");
 	}
 }
 
-string UserManage::ChangeData(string buf)//buf:用户账号，要修改的属性名，修改后的内容
+string UserManage::ChangeData(string buf)//buf:用户账号#要修改的属性名#修改后的内容;return : Success(成功完成）
 {
 	//字符串分割
 	string Acc;
@@ -245,27 +246,28 @@ string UserManage::ChangeData(string buf)//buf:用户账号，要修改的属性
 	string CData;
 	char Buffer[1024];	//将传入的string转为char *以使用sscanf函数
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%s,%s,%s", &Acc, &Col, &CData);
+	sscanf(Buffer, "%s#%s#%s", &Acc, &Col, &CData);
 
-/*TODO SQL : User表，在Account= Acc的行，更新Col = CData*/
+	int acc = atoi(Acc.c_str());
+/*TODO SQL : User表，在Account= acc的行，更新Col = CData*/
 
 	return string("Success");
 }
 
-string UserManage::SelecteAccount(string buf)//buf:用户账号，string形式
+string UserManage::SelecteAccount(string buf)//buf:用户账号(string);return : Success(成功完成）
 {
 	buf = atoi(buf.c_str());//string->int
 /*TODO SQL : User表，在Account= Acc的行，删除一整行*/
 	return string("Success");
 }
 
-string UserManage::SelecteGroup(string buf)//buf:群组编号,发出请求的用户账号
+string UserManage::SelecteGroup(string buf)//buf:群组编号#发出请求的用户账号;return : Success(成功完成）/Failed（操作无效）
 {
 	//字符串分割
 	string CNum, Acc;
 	char Buffer[1024];	//将传入的string转为char *以使用sscanf函数
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%s,%s", &CNum, &Acc);
+	sscanf(Buffer, "%s#%s", &CNum, &Acc);
 	//查看该群群主
 /*TODO SQL : Cluster表, CNum = CNum的行，得到COwner(string)*/
 	string COwner;
