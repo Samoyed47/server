@@ -34,6 +34,7 @@ string UserManage::Logging(string buf)//buf:账号|密码; return:9#成功/失�
 		if (Password == PWord)
 		{
 			ans = "9" + '#' + string("Success");
+			LogSuccess(buf);
 		}
 		else
 		{
