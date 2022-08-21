@@ -285,13 +285,13 @@ string UserManage::SelecteAccount(string buf)//buf:用户账号(string);return :
 	return "12" + '#' + string("Success");
 }
 
-string UserManage::SelecteGroup(string buf)//buf:群号或好友账号|发出请求的用户账号;return : 13#Success(成功完成）/Failed（操作无效）
+string UserManage::SelecteGroup(string buf)//buf:发出请求的用户账号|群号或好友账号;return : 13#Success(成功完成）/Failed（操作无效）
 {
 	//字符串分割
 	string Num, Acc;
 	char Buffer[1024];	//将传入的string转为char *以使用sscanf函数
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%s|%s", &Num, &Acc);
+	sscanf(Buffer, "%s|%s", &Acc, &Num);
 
 	//得到群组编号
 	string CNum;
