@@ -1,15 +1,15 @@
 #pragma once
+#pragma comment(lib, "sqlite3.lib")
 
+#define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
-#include <string>
-#include <sqlite3.h>
+#include <string.h>
+#include <vector>
+#include "sqlite3.h"
+#include "database.h"
+
 using namespace std;
 
-class UserInformation {
-public: 	
-	int account ; 
-	
-} ; 
 
 class UserManage {
 public:
@@ -19,7 +19,7 @@ public:
 	string  AddFriend2(string buf);
 	string  ChangeData(string buf);
 	string  Logging(string buf);
-	string	LogSuccess(string buf);
+	string LogSuccess(string buf);
 	string  Receive(string buf);
 	string  SendMsg(string buf, int confd);
 	string  SelecteAccount(string buf);
@@ -27,8 +27,5 @@ public:
 protected:
 
 private:
-	sqlite3* handler;
-	char* errormsg;
-	int val = sqlite3_open("sqlite.db", &handler);
-	static const int MaxAccount = 10000000;
+	DataBases D;
 };
