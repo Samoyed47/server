@@ -108,19 +108,36 @@ string UserManage::LogSuccess(string buf)//buf:账号|密码; return:9#账号#�
 	
 }
 
-string UserManage::Receive(string buf)//buf:群组编号|用户账号|发送时间|消息内容; return:10#Done(表示收到消息且已发出）
+string UserManage::Receive(string buf)//buf:群号或好友账号|用户账号|发送时间|消息内容; return:10#Done(表示收到消息且已发出）
 {
 		//字符串分割
-	string CNum, Acc, Time, Msg;
+	string Num, Acc, Time, Msg;
 	char Buffer[1024];	//将传入的string转为char *以使用sscanf函数
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%s|%s|%s|%s", &CNum, &Acc, &Time, &Msg);
+	sscanf(Buffer, "%s|%s|%s|%s", &Num, &Acc, &Time, &Msg);
+
+	//得到群组编号
+	string CNum;
+	if (buf < "40000000")//buf是好友账号
+	{
+		string Member1 = Acc + "|" + Num;
+		string Member2 = Num + "|" + Acc;
+/*TODO SQL : Cluster表, CMember = Member1 or CMember = Member2 的行，得到CNum(int)*/
+		int Num;
+		CNum = to_string(Num);
+	}
+	else
+	{
+		CNum = Num;
+	}
+
 	//群发消息
 	string SMsg = Time + "," + Acc + "," + Msg;//群组聊天记录的格式
 /*TODO SQL : 在Cluster表中搜索CNum = CNum,得到MsgRecord(string)*/
 	string MsgRecord;
 	string RMsg = SMsg + "|" + MsgRecord;
 /*TODO SQL : 在Cluster表中搜索CNum = CNum,更新MsgRecord为RMsg*/
+
 /*TODO SQL : 在Cluster表中搜索CNum = CNum,得到CMember(string,|隔开)*/
 	string CMember;
 		//得到每个群组成员的账号
@@ -267,13 +284,29 @@ string UserManage::SelecteAccount(string buf)//buf:用户账号(string);return :
 	return "12" + '#' + string("Success");
 }
 
-string UserManage::SelecteGroup(string buf)//buf:群组编号|发出请求的用户账号;return : 13#Success(成功完成）/Failed（操作无效）
+string UserManage::SelecteGroup(string buf)//buf:群号或好友账号|发出请求的用户账号;return : 13#Success(成功完成）/Failed（操作无效）
 {
 	//字符串分割
-	string CNum, Acc;
+	string Num, Acc;
 	char Buffer[1024];	//将传入的string转为char *以使用sscanf函数
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%s|%s", &CNum, &Acc);
+	sscanf(Buffer, "%s|%s", &Num, &Acc);
+
+	//得到群组编号
+	string CNum;
+	if (buf < "40000000")//buf是好友账号
+	{
+		string Member1 = Acc + "|" + Num;
+		string Member2 = Num + "|" + Acc;
+/*TODO SQL : Cluster表, CMember = Member1 or CMember = Member2 的行，得到CNum(int)*/
+		int Num;
+		CNum = to_string(Num);
+	}
+	else
+	{
+		CNum = Num;
+	}
+
 	//查看该群群主
 /*TODO SQL : Cluster表, CNum = CNum的行，得到COwner(string)*/
 	string COwner;
