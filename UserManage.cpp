@@ -20,15 +20,17 @@ string UserManage::Register(string buf) //buf:nickname|password; return:5#账号
 	return string("5#" + to_string(MaxAccount+1));
 }
 
-string UserManage::Logging(string buf)//buf:账号|密码; return:9#账号#昵称#头像#好友账号1|好友账号2|#群号1|群号2| / Failed / Not Exist
+string UserManage::Logging(string buf)//buf:账号|密码|Socket; return:9#账号#昵称#头像#好友账号1|好友账号2|#群号1|群号2| / Failed / Not Exist
 {
 	char* acc = new char[buf.length() + 1];
 	char* pword = new char[buf.length() + 1];
+	char* socket = new char[buf.length() + 1];
 	char* Buffer = new char[buf.length() + 1];
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%[^|]|%s", acc, pword);
+	sscanf(Buffer, "%[^|]|%[^|]|%s", acc, pword, socket);
 	string Acc = acc;
 	string PWord = pword;
+	string SK = socket;
 
 	string SQL = "Account = " + Acc;
 	D.SelectData(1, SQL);
@@ -55,16 +57,18 @@ string UserManage::Logging(string buf)//buf:账号|密码; return:9#账号#昵�
 }
 
 
-string UserManage::LogSuccess(string buf)//buf:账号|密码; return:9#账号#昵称#头像#好友账号1|好友账号2|#群号1|群号2|
+string UserManage::LogSuccess(string buf)//buf:账号|密码|Socket; return:9#账号#昵称#头像#好友账号1|好友账号2|#群号1|群号2|
 {
 	char* acc = new char[buf.length() + 1];
 	char* pword = new char[buf.length() + 1];
+	char* socket = new char[buf.length() + 1];
 	char* Buffer = new char[buf.length() + 1];
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%[^|]|%s", acc, pword);
+	sscanf(Buffer, "%[^|]|%[^|]|%s", acc, pword, socket);
 	string Acc = acc;
 	string PWord = pword;
-
+	string SK = socket;
+	//基本信息
 	int Account, Portrait;
 	string UName;
 	D.SelectData(1, "Account = " + Acc);
@@ -73,6 +77,10 @@ string UserManage::LogSuccess(string buf)//buf:账号|密码; return:9#账号#�
 	UName = D.User1[0].UName;
 
 	string Data1 = to_string(Account) + "#" + UName + "#" + to_string(Portrait);
+
+	//改变登录状态，记录socket
+	bool a = D.ChangeData(1, "LogStatus=1", "Account=" + Acc);
+	bool b = D.ChangeData(1, "Socket=" + SK, "Account=" + Acc);
 
 	D.SelectData(1, "Account = " + Acc);
 	string OffLineTime = D.User1[0].OffLineTime;
@@ -105,10 +113,12 @@ string UserManage::LogSuccess(string buf)//buf:账号|密码; return:9#账号#�
 			string Time = time;
 			string Acc = acc;
 			string Msg = msg;
+			D.SelectData(1, "Account = " + Acc);
+			string NickName = D.User1[0].UName;
+			string SMsg2 = Time + "," + Acc + "," + NickName + "," + Msg;
 			if (Time > OffLineTime)	//如果消息时间晚于上次下线时间   （字符串比较是逐位比较）
 			{
-				string SMsg = AMsg;
-				SendMsg("10#" + SMsg, Socket);
+				SendMsg("10#" + SMsg2, Socket);//(发给用户）10#时间,发出消息的用户的账号,发出消息的用户的昵称,对话消息
 			}
 			AMsg = strtok(NULL, "|");
 		}
@@ -150,6 +160,24 @@ string UserManage::LogSuccess(string buf)//buf:账号|密码; return:9#账号#�
 	return "9#" + Data1 + "#" + AllFriend + "#" + AllGroup;
 }
 
+string UserManage::LogOut(string buf)//buf:账号; return:(无）
+{
+	string Acc = buf;
+	//改变登录状态
+	bool a = D.ChangeData(1, "LogStatus=0", "Account=" + Acc);
+	if (a) cout << "true" << endl;
+	if (!a) cout << "false" << endl;
+	//记录下线时间
+	time_t timep;
+	time(&timep);
+	char tmp[64];
+	strftime(tmp, sizeof(tmp), "%Y.%m.%d.%H.%M.%S", localtime(&timep));
+	string time = tmp;//获取当前时间
+	cout << time.c_str() << endl;
+	bool b = D.ChangeData(1, "OffLineTime='"+ time + "'", "Account=" + Acc);
+	return string();
+}
+
 
 string UserManage::SendMsg(string buf, int confd)//单发消息，buf:发送时间，发信人账号，消息内容；confd:收信人socket;;;return: 11#Done(收信人已收到)
 {
@@ -186,6 +214,9 @@ string UserManage::Receive(string buf)//buf:群号或好友账号|用户账号|�
 	}
 
 	string SMsg = Time + "," + Acc + "," + Msg;
+	D.SelectData(1, "Account = " + Acc);
+	string NickName = D.User1[0].UName;
+	string SMsg2 = Time + "," + Acc + "," + NickName + "," + Msg;
 
 	D.SelectData(2, "CNum = " + CNum);
 
@@ -209,7 +240,7 @@ string UserManage::Receive(string buf)//buf:群号或好友账号|用户账号|�
 		if (LogStatus == 1)
 		{
 			int Socket = D.User1[0].Socket;
-			SendMsg("10#" + SMsg, Socket);
+			SendMsg("10#" + SMsg2, Socket);//(发给用户）10#时间,发出消息的用户的账号,发出消息的用户的昵称,对话消息
 		}
 		User = strtok(NULL, "|");
 	}
@@ -290,8 +321,8 @@ string UserManage::AddFriend1(string buf)//buf:用户账号|好友账号|备注�
 	D.SelectData(1, "Account = " + Acc1);
 	string UName = D.User1[0].UName;
 
-	string SMsg = "11#" + UName + "," + Acc1 + "," + Msg;
-	SendMsg(SMsg, Socket); //将好友请求以消息的形式发给被邀请人  
+	string SMsg = "7#" + UName + "," + Acc1 + "," + Msg;
+	SendMsg(SMsg, Socket); //(邀请好友，发给被邀请人）7#邀请人昵称,邀请人账号,备注信息
 
 	return "7#sended";
 }
@@ -315,14 +346,14 @@ string UserManage::AddFriend2(string buf)//buf:accept/reject|用户账号|好友
 	{
 		bool b = D.DeleteData(2, "CMember = '" + Acc1 + "|" + Acc2 + "'");
 
-		string SMsg = "7#You are rejected by " + UName + "," + Acc2;
-		SendMsg(SMsg, Socket);
+		string SMsg = "7#" + UName + "," + Acc2 + ",rejected your invitation.";
+		SendMsg(SMsg, Socket);//(邀请好友，发给邀请人）7#被邀请人昵称,被邀请人账号,rejected/accepted your invitation.
 		return "7#reject";
 	}
 	else if (A_R == "accept")
 	{
-		string SMsg = "7#" + UName + "," + Acc2 + " accepted your invitation.";
-		SendMsg(SMsg, Socket);
+		string SMsg = "7#" + UName + "," + Acc2 + ",accepted your invitation.";
+		SendMsg(SMsg, Socket);//(邀请好友，发给邀请人）7#被邀请人昵称,被邀请人账号,rejected/accepted your invitation.
 		return "7#accept";
 	}
 }
