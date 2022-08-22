@@ -32,6 +32,18 @@
 #define handle_error(msg) \
 	do{ perror(msg) ; exit(EXIT_FAILURE) ;} while(0) 
 
+ /* 打印记录 */
+#define ASNI_NODE		"\33[0m"
+#define ASNI_FG_BLUE	"\33[1;34m"
+#define ASNI_FMT( str, fmt) fmt str ASNI_NODE
+#define _Log(...)\
+	do { \
+		printf(__VA_ARGS__); \
+	} while(0) 
+/* 输出：	[当前源文件：行数：所在函数：传入字符串] */
+#define Log(format, ...)\
+	_Log(ASNI_FMT("[%s:%d %s] " format, ASNI_FG_BLUE) "\n",\
+			__FILE__, __LINE__, __func__, ## __VA_ARGS__) 
 
 // storing the clients' property 
 struct client_property{
@@ -51,11 +63,11 @@ void init_server() ;
 void init_socket() ;
 
 
-void listen_thread_function(void *arg) ; 
-void send_thread_function  (void *arg) ; 
+void *listen_thread_function(void *arg) ; 
+void *send_thread_function  (void *arg) ; 
 
 void add_client(int connectfd, struct sockaddr_in addr) ; 
-void client_thread_function(void *arg) ; 
+void *client_thread_function(void *arg) ; 
 void remove_client(struct client_property *prop) ; 
 void handle_client_message(struct client_property *prop, const char *message);
 void join_group( const char *msg) ; 

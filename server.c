@@ -6,7 +6,7 @@ struct sockaddr_in client, server ;
 int send_q_head, send_q_tail ; 
 struct send_property send_queue[MAX_SEND_QUEUE_SIZE] ; 
 //lock for the queue 
-static pthread_mutex_t queue_lock ; 
+pthread_mutex_t queue_lock ; 
 
 struct client_property client_prop[MAX_CLIENT_COUNT] ; 
 
@@ -16,7 +16,7 @@ struct client_property client_prop[MAX_CLIENT_COUNT] ;
 // network( socket)   
 void init_server()
 {
-	if(DEBUG) printf("init_server\n") ; 
+	 
 	send_q_head = send_q_tail = 0 ;
 	memset(send_queue,  0, sizeof(send_queue ) ) ; 
 	memset(client_prop, 0, sizeof(client_prop) ) ; 
@@ -25,11 +25,11 @@ void init_server()
 	
 	pthread_mutex_init(&queue_lock, NULL) ;  
 	init_socket() ;  
+	if(DEBUG) Log("init_server sucessful!" ) ; 
 }
 
 void init_socket()
 {
-	if(DEBUG) printf("init_sock\n") ;  
 	if( (listenfd = socket(AF_INET,SOCK_STREAM,0) ) <0)
 		handle_error("socket") ; 
 	int opt = SO_REUSEADDR ; 
@@ -46,18 +46,20 @@ void init_socket()
  /* 监听线程
   *
   * */
-void listen_thread_function(void *arg) 
+void *listen_thread_function(void *arg) 
 {
-	printf("in the listen thread function\n" ) ; 
-	int sin_size = sizeof(struct sockaddr_in) ; 
+	socklen_t sin_size = sizeof(struct sockaddr_in) ; 
 	while(1)
 	{
 
-		if((connectfd=accept(listenfd,(struct sockaddr *)&client,
+		if((connectfd=accept(listenfd,(struct sockaddr *) &client,
 						&sin_size)) < 0) 
 			handle_error("accept ()") ; 
-
-		printf("connection from %s\n" , inet_ntoa(client.sin_addr) ) ; 
+		
+		if(DEBUG){
+		   	Log   ("connection from: ") ; 
+			printf("				%s\n" , inet_ntoa(client.sin_addr) ) ; 
+		}
 		add_client(connectfd , client) ; 
 	}
 } 
@@ -78,32 +80,33 @@ void add_client(int connectfd, struct sockaddr_in addr )
 	client_prop[idx].addr	   = addr ; 
 	pthread_t tid ; 
 	pthread_create(&tid, NULL,client_thread_function, &client_prop[idx]) ; 
-	
-	printf("create new thread for connect %s\n", inet_ntoa(addr.sin_addr));
+	if(DEBUG){
+		Log   ("create new thread for connect: "	) ;
+		printf("				%s\n", inet_ntoa(addr.sin_addr));
+	}
 }
  /* 接受用户消息的线程
   * *arg  客户端套接字指针
   */
-void client_thread_function(void *arg)
+void *client_thread_function(void *arg)
 {
 	struct client_property *prop = (struct client_property *) arg ; 
-
-	if(DEBUG){
-		char we[] = "welcome!" ; 
-	   	write(prop->client_fd, we, strlen(we) +1) ; 
-	} 	
+	
+	const char *we = "welcome !\n" ; 
+	/* 写会客户端 */
+	write(prop->client_fd, we, strlen(we) +1) ; 
 	char buf[BUFFER_SIZE] ; 
 	int numbytes = 0 ;  
 	while(1)
 	{
-		printf("recv ......\n") ; 
+		printf("recv ......") ; 
 		numbytes = recv(prop->client_fd, buf, BUFFER_SIZE, 0) ;
 		if( numbytes <=0)
 		{
 			printf("user %s is offline.\n",inet_ntoa(prop->addr.sin_addr));
 			break ;
 		} 
-		buf[numbytes] = '\0' ; 
+		/* buf[numbytes] = '\0' ; */ 
 		handle_client_message(prop , buf) ; 
 		
 		printf(" OK\n" ) ; 
@@ -124,7 +127,7 @@ void handle_client_message(struct client_property *prop, const char *message)
 	if(DEBUG)printf("handling message from client %s,message is \n%s\n",
 					inet_ntoa(prop->addr.sin_addr), message) ; 
 	int typeint ; 
-	char *msg ; 
+	char msg[BUFFER_SIZE] ; 
 	sscanf(message , "%d|%s", &typeint, msg ) ; 
 	if(typeint ==JOIN_GROUP ){
 		join_group( msg) ; 	
@@ -159,9 +162,11 @@ void handle_client_message(struct client_property *prop, const char *message)
 }
 void join_group(const char * msg)
 {
+	Log("\n") ; 
 }	
 void create_group(const char * msg) 
 {
+
 }
 
 void invite_user(const char * msg) 
@@ -206,17 +211,21 @@ void save_offline_message(struct send_property msg)
 }
  /* 从消息队列 send_queue[]中取出消息，发送或者存储消息
   * */
-void send_thread_function (void *arg) 
+void *send_thread_function (void *arg) 
 {
 	struct send_property msg_tmp ; 
 	char   send_buffer[BUFFER_SIZE] ; 
 	while(1)
 	{
 		pthread_mutex_lock(&queue_lock) ; 
+
+		/* 队列中有消息要发送 */
 		if(send_q_head != send_q_tail)
 		{
 			msg_tmp = send_queue[send_q_head] ; 
 			send_q_head = (send_q_head + 1) % MAX_SEND_QUEUE_SIZE ; 
+
+			/* 得到文件描述符 */
 			int fd = get_user_fd(msg_tmp.useraccount); 
 			
 			if( fd != -1 ) {
@@ -225,13 +234,14 @@ void send_thread_function (void *arg)
 
 				write(fd, send_buffer, sizeof(send_buffer) ) ; 
 			} else{
+				/*TODO 用户不在线，保存到数据库还是怎么处理？？？ */
 				save_offline_message(msg_tmp) ; 
 			}
-			pthread_mutex_unlock(&queue_lock) ;
-		}else {
-			pthread_mutex_unlock(&queue_lock) ; 
+		}else {  
+			/* 队列为空不需要发信息，休眠， */
 			sleep(1) ;
 		} 
+		pthread_mutex_unlock(&queue_lock) ; 
 	}
 
 
