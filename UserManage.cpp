@@ -80,11 +80,7 @@ string UserManage::LogSuccess(string buf)//buf:账号|密码|Socket; return:9#�
 
 	//改变登录状态，记录socket
 	bool a = D.ChangeData(1, "LogStatus=1", "Account=" + Acc);
-	if (a) cout << "true" << endl;
-	if (!a) cout << "false" << endl;
-	bool b = D.ChangeData(1, "Socket=" + SK, "Account=" + Acc);		//FALSE
-	if (b) cout << "true" << endl;
-	if (!b) cout << "false" << endl;
+	bool b = D.ChangeData(1, "Socket=" + SK, "Account=" + Acc);
 
 	D.SelectData(1, "Account = " + Acc);
 	string OffLineTime = D.User1[0].OffLineTime;
@@ -179,8 +175,6 @@ string UserManage::LogOut(string buf)//buf:账号; return:(无）
 	string time = tmp;//获取当前时间
 	cout << time.c_str() << endl;
 	bool b = D.ChangeData(1, "OffLineTime='"+ time + "'", "Account=" + Acc);
-	if (b) cout << "true" << endl;
-	if (!b) cout << "false" << endl;
 	return string();
 }
 
