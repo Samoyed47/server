@@ -20,15 +20,17 @@ string UserManage::Register(string buf) //buf:nickname|password; return:5#账号
 	return string("5#" + to_string(MaxAccount+1));
 }
 
-string UserManage::Logging(string buf)//buf:账号|密码; return:9#账号#昵称#头像#好友账号1|好友账号2|#群号1|群号2| / Failed / Not Exist
+string UserManage::Logging(string buf)//buf:账号|密码|Socket; return:9#账号#昵称#头像#好友账号1|好友账号2|#群号1|群号2| / Failed / Not Exist
 {
 	char* acc = new char[buf.length() + 1];
 	char* pword = new char[buf.length() + 1];
+	char* socket = new char[buf.length() + 1];
 	char* Buffer = new char[buf.length() + 1];
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%[^|]|%s", acc, pword);
+	sscanf(Buffer, "%[^|]|%[^|]|%s", acc, pword, socket);
 	string Acc = acc;
 	string PWord = pword;
+	string SK = socket;
 
 	string SQL = "Account = " + Acc;
 	D.SelectData(1, SQL);
@@ -55,16 +57,18 @@ string UserManage::Logging(string buf)//buf:账号|密码; return:9#账号#昵�
 }
 
 
-string UserManage::LogSuccess(string buf)//buf:账号|密码; return:9#账号#昵称#头像#好友账号1|好友账号2|#群号1|群号2|
+string UserManage::LogSuccess(string buf)//buf:账号|密码|Socket; return:9#账号#昵称#头像#好友账号1|好友账号2|#群号1|群号2|
 {
 	char* acc = new char[buf.length() + 1];
 	char* pword = new char[buf.length() + 1];
+	char* socket = new char[buf.length() + 1];
 	char* Buffer = new char[buf.length() + 1];
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%[^|]|%s", acc, pword);
+	sscanf(Buffer, "%[^|]|%[^|]|%s", acc, pword, socket);
 	string Acc = acc;
 	string PWord = pword;
-
+	string SK = socket;
+	//基本信息
 	int Account, Portrait;
 	string UName;
 	D.SelectData(1, "Account = " + Acc);
@@ -73,6 +77,14 @@ string UserManage::LogSuccess(string buf)//buf:账号|密码; return:9#账号#�
 	UName = D.User1[0].UName;
 
 	string Data1 = to_string(Account) + "#" + UName + "#" + to_string(Portrait);
+
+	//改变登录状态，记录socket
+	bool a = D.ChangeData(1, "LogStatus=1", "Account=" + Acc);
+	if (a) cout << "true" << endl;
+	if (!a) cout << "false" << endl;
+	bool b = D.ChangeData(1, "Socket=" + SK, "Account=" + Acc);		//FALSE
+	if (b) cout << "true" << endl;
+	if (!b) cout << "false" << endl;
 
 	D.SelectData(1, "Account = " + Acc);
 	string OffLineTime = D.User1[0].OffLineTime;
@@ -150,6 +162,26 @@ string UserManage::LogSuccess(string buf)//buf:账号|密码; return:9#账号#�
 	}
 
 	return "9#" + Data1 + "#" + AllFriend + "#" + AllGroup;
+}
+
+string UserManage::LogOut(string buf)//buf:账号; return:(无）
+{
+	string Acc = buf;
+	//改变登录状态
+	bool a = D.ChangeData(1, "LogStatus=0", "Account=" + Acc);
+	if (a) cout << "true" << endl;
+	if (!a) cout << "false" << endl;
+	//记录下线时间
+	time_t timep;
+	time(&timep);
+	char tmp[64];
+	strftime(tmp, sizeof(tmp), "%Y.%m.%d.%H.%M.%S", localtime(&timep));
+	string time = tmp;//获取当前时间
+	cout << time.c_str() << endl;
+	bool b = D.ChangeData(1, "OffLineTime='"+ time + "'", "Account=" + Acc);
+	if (b) cout << "true" << endl;
+	if (!b) cout << "false" << endl;
+	return string();
 }
 
 
