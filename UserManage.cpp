@@ -87,20 +87,15 @@ string UserManage::LogSuccess(string buf)//buf:账号|密码|Socket; return:9#�
 	int Socket = D.User1[0].Socket;
 
 	//未发送消息
-	string SQL = "CMember LIKE '%" + Acc + "%'";	
-	D.SelectData(2, SQL); 
-	vector<string> MsgRecord;
-	MsgRecord.clear();
+	string SQL = "CMember LIKE '%" + Acc + "%'";
+	D.SelectData(2, SQL);
 	for (size_t i = 0; i < D.Cluster1.size(); i++)
 	{
 		if (i >= D.Cluster1.size() || i < 0) break;
-		MsgRecord.push_back(D.Cluster1[i].MsgRecord);
-	}
-	for (size_t i = 0; i < MsgRecord.size(); i++)//MsgRecord[i]:Time1,Acount1,Msg1|Time2,Account2,Msg2|Time3,Account3,Msg3
-	{
-		if (i >= MsgRecord.size() || i < 0) break;
-		char* MR = new char[MsgRecord[i].length() + 1];
-		strcpy(MR, MsgRecord[i].c_str());
+		string MsgRecord = D.Cluster1[i].MsgRecord;
+		string CNum = to_string(D.Cluster1[i].CNum);
+		char* MR = new char[MsgRecord.length() + 1];
+		strcpy(MR, MsgRecord.c_str());
 		char* AMsg;
 		AMsg = strtok(MR, "|");//字符串拆分strtok()
 		while (AMsg != NULL)	//AMsg:Time1,Acount1,Msg1
@@ -115,10 +110,10 @@ string UserManage::LogSuccess(string buf)//buf:账号|密码|Socket; return:9#�
 			string Msg = msg;
 			D.SelectData(1, "Account = " + Acc);
 			string NickName = D.User1[0].UName;
-			string SMsg2 = Time + "," + Acc + "," + NickName + "," + Msg;
+			string SMsg2 = Time + "," + Acc + "," + NickName + "," + CNum + "," + Msg;
 			if (Time > OffLineTime)	//如果消息时间晚于上次下线时间   （字符串比较是逐位比较）
 			{
-				SendMsg("10#" + SMsg2, Socket);//(发给用户）10#时间,发出消息的用户的账号,发出消息的用户的昵称,对话消息
+				SendMsg("11#" + SMsg2, Socket);//(发给用户）11#时间,发出消息的用户的账号,发出消息的用户的昵称,群组编号，对话消息
 			}
 			AMsg = strtok(NULL, "|");
 		}
@@ -126,7 +121,6 @@ string UserManage::LogSuccess(string buf)//buf:账号|密码|Socket; return:9#�
 	//好友
 	string SQL1 = "CMember LIKE '%" + Acc + "%' AND COwner=1";//搜索含Acc的两人群组
 	D.SelectData(2, SQL1);
-
 	string AllFriend = "";
 	for (size_t i = 0; i < D.Cluster1.size(); i++)
 	{
@@ -165,16 +159,13 @@ string UserManage::LogOut(string buf)//buf:账号; return:(无）
 	string Acc = buf;
 	//改变登录状态
 	bool a = D.ChangeData(1, "LogStatus=0", "Account=" + Acc);
-	if (a) cout << "true" << endl;
-	if (!a) cout << "false" << endl;
 	//记录下线时间
 	time_t timep;
 	time(&timep);
 	char tmp[64];
 	strftime(tmp, sizeof(tmp), "%Y.%m.%d.%H.%M.%S", localtime(&timep));
 	string time = tmp;//获取当前时间
-	cout << time.c_str() << endl;
-	bool b = D.ChangeData(1, "OffLineTime='"+ time + "'", "Account=" + Acc);
+	bool b = D.ChangeData(1, "OffLineTime='" + time + "'", "Account=" + Acc);
 	return string();
 }
 
@@ -216,7 +207,7 @@ string UserManage::Receive(string buf)//buf:群号或好友账号|用户账号|�
 	string SMsg = Time + "," + Acc + "," + Msg;
 	D.SelectData(1, "Account = " + Acc);
 	string NickName = D.User1[0].UName;
-	string SMsg2 = Time + "," + Acc + "," + NickName + "," + Msg;
+	string SMsg2 = Time + "," + Acc + "," + NickName + "," + CNum + "," + Msg;
 
 	D.SelectData(2, "CNum = " + CNum);
 
@@ -240,7 +231,7 @@ string UserManage::Receive(string buf)//buf:群号或好友账号|用户账号|�
 		if (LogStatus == 1)
 		{
 			int Socket = D.User1[0].Socket;
-			SendMsg("10#" + SMsg2, Socket);//(发给用户）10#时间,发出消息的用户的账号,发出消息的用户的昵称,对话消息
+			SendMsg("11#" + SMsg2, Socket);//(发给用户）11#时间,发出消息的用户的账号,发出消息的用户的昵称,群组编号,对话消息
 		}
 		User = strtok(NULL, "|");
 	}
@@ -248,14 +239,22 @@ string UserManage::Receive(string buf)//buf:群号或好友账号|用户账号|�
 	return "10#Done";
 }
 
-string UserManage::SearchUser(string buf)//buf:用户账号; return : 6#账号#昵称#头像#登录状态#上次下线时间 / 该用户不存在
+string UserManage::SearchUser(string buf)//buf:该用户账号|被搜索的账号/昵称; return : 6#账号#昵称#头像#登录状态#上次下线时间 / 该用户不存在
 {
+	char* now = new char[buf.length() + 1];
+	char* search = new char[buf.length() + 1];
+	char* Buffer = new char[buf.length() + 1];
+	strcpy(Buffer, buf.c_str());
+	sscanf(Buffer, "%[^|]|%s", now, search);
+	string Now = now, Search = search;
+	D.SelectData(1, "Account = " + Now);
+	int Socket = D.User1[0].Socket;
+
 	string data;
 	int Account, Portrait, LogStatus;
 	string UName, OffLineTime;
 
-	D.SelectData(1, "Account = " + buf);
-	if (!D.User1.empty())
+	if (D.SelectData(1, "Account = " + Search) && !D.User1.empty())
 	{
 		Account = D.User1[0].Account;
 		Portrait = D.User1[0].Potrait;
@@ -267,14 +266,24 @@ string UserManage::SearchUser(string buf)//buf:用户账号; return : 6#账号#�
 	}
 	else
 	{
-		D.SelectData(1, "UName = '" + buf + "'");
-		if (!D.User1.empty())
+		if (D.SelectData(1, "UName = '" + Search + "'") && !D.User1.empty())
 		{
-			Account = D.User1[0].Account;
-			Portrait = D.User1[0].Potrait;
-			LogStatus = D.User1[0].LogStatus;
-			UName = D.User1[0].UName;
-			OffLineTime = D.User1[0].OffLineTime;
+			size_t n = D.User1.size();
+			for (size_t i = 0; i < n-1; i++)
+			{
+				Account = D.User1[i].Account;
+				Portrait = D.User1[i].Potrait;
+				LogStatus = D.User1[i].LogStatus;
+				UName = D.User1[i].UName;
+				OffLineTime = D.User1[i].OffLineTime;
+				data = "6#" + to_string(Account) + "#" + UName + "#" + to_string(Portrait) + "#" + to_string(LogStatus) + "#" + OffLineTime;
+				SendMsg(data, Socket);
+			}
+			Account = D.User1[n-1].Account;
+			Portrait = D.User1[n - 1].Potrait;
+			LogStatus = D.User1[n - 1].LogStatus;
+			UName = D.User1[n - 1].UName;
+			OffLineTime = D.User1[n - 1].OffLineTime;
 			data = "6#" + to_string(Account) + "#" + UName + "#" + to_string(Portrait) + "#" + to_string(LogStatus) + "#" + OffLineTime;
 			return data;
 		}
@@ -312,7 +321,7 @@ string UserManage::AddFriend1(string buf)//buf:用户账号|好友账号|备注�
 	size_t n = D.Cluster1.size() - 1;
 	int MaxCNum = D.Cluster1[n].CNum;
 
-	data = to_string(MaxCNum+1) + ",'/0', " + to_string(1) + ", '" + Member + "', " + "'/0'";
+	data = to_string(MaxCNum + 1) + ",'/0', " + to_string(1) + ", '" + Member + "', " + "'/0'";
 	//data = "NULL,'/0', " + to_string(1) + ", '" + Member + "', " + "'/0'";
 	bool b = D.AddData(2, data);
 
