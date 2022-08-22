@@ -10,14 +10,14 @@ string UserManage::Register(string buf) //buf:nickname|password; return:5#账号
 	string NickName = Nickname;
 	string PassWord = Password;
 
-	D.SelectData(1, "\0");
-	size_t n = D.User1.size() - 1;
+	D.SelectData(1, "/0");	
+	size_t n = D.User1.size() - 1;	
 	int MaxAccount = D.User1[n].Account;
 
-	string data = to_string(MaxAccount+1) + "," + NickName + "," + PassWord + "," + "NULL" + "," + to_string(0) + "," + "NULL" + "," + "\0";
-	D.AddData(1, data);
+	string data = to_string(MaxAccount+1) + ",'" + NickName + "','" + PassWord + "'," + "NULL" + "," + to_string(0) + "," + "NULL" + "," + "'/0'";
+	bool b = D.AddData(1, data);	
 
-	return string("5#" + to_string(MaxAccount - 1));
+	return string("5#" + to_string(MaxAccount+1));
 }
 
 string UserManage::Logging(string buf)//buf:账号|密码; return:9#账号#昵称#头像#好友账号1|好友账号2|#群号1|群号2| / Failed / Not Exist
@@ -54,6 +54,7 @@ string UserManage::Logging(string buf)//buf:账号|密码; return:9#账号#昵�
 	return ans;
 }
 
+
 string UserManage::LogSuccess(string buf)//buf:账号|密码; return:9#账号#昵称#头像#好友账号1|好友账号2|#群号1|群号2|
 {
 	char* acc = new char[buf.length() + 1];
@@ -77,19 +78,15 @@ string UserManage::LogSuccess(string buf)//buf:账号|密码; return:9#账号#�
 	string OffLineTime = D.User1[0].OffLineTime;
 	int Socket = D.User1[0].Socket;
 
-	string SQL = "CMember LIKE %" + Acc + "%";
-	D.SelectData(2, SQL);
+	//未发送消息
+	string SQL = "CMember LIKE '%" + Acc + "%'";	
+	D.SelectData(2, SQL); 
 	vector<string> MsgRecord;
-	//MsgRecord.clear();
+	MsgRecord.clear();
 	for (size_t i = 0; i < D.Cluster1.size(); i++)
 	{
 		if (i >= D.Cluster1.size() || i < 0) break;
-		char* S = new char[D.Cluster1[i].MsgRecord.length() + 1];
-		char* Buffer = new char[D.Cluster1[i].MsgRecord.length() + 1];
-		strcpy(Buffer, D.Cluster1[i].MsgRecord.c_str()); //D.Cluster1[i].MsgRecord:'Time1,Acount1,Msg1|Time2,Account2,Msg2|Time3,Account3,Msg3'
-		sscanf(Buffer, "%*[']%[^']", S);
-		string s = S;
-		MsgRecord.push_back(s);
+		MsgRecord.push_back(D.Cluster1[i].MsgRecord);
 	}
 	for (size_t i = 0; i < MsgRecord.size(); i++)//MsgRecord[i]:Time1,Acount1,Msg1|Time2,Account2,Msg2|Time3,Account3,Msg3
 	{
@@ -116,8 +113,8 @@ string UserManage::LogSuccess(string buf)//buf:账号|密码; return:9#账号#�
 			AMsg = strtok(NULL, "|");
 		}
 	}
-
-	string SQL1 = "CMember LIKE %" + Acc + "% AND COwner = 1";
+	//好友
+	string SQL1 = "CMember LIKE '%" + Acc + "%' AND COwner=1";//搜索含Acc的两人群组
 	D.SelectData(2, SQL1);
 
 	string AllFriend = "";
@@ -140,18 +137,25 @@ string UserManage::LogSuccess(string buf)//buf:账号|密码; return:9#账号#�
 			AllFriend += A + "|";
 		}
 	}
-
-	string SQL2 = "CMember like %" + Acc + "% and COwner <> 1";
+	//群聊
+	string SQL2 = "CMember LIKE '%" + Acc + "%' AND COwner<>1";
 	D.SelectData(2, SQL2);
-
 	string AllGroup = "";
 	for (size_t i = 0; i < D.Cluster1.size(); i++)
 	{
 		if (i >= D.Cluster1.size() || i < 0) break;
-		AllFriend += to_string(D.Cluster1[i].CNum) + "|";
+		AllGroup += to_string(D.Cluster1[i].CNum) + "|";
 	}
 
 	return "9#" + Data1 + "#" + AllFriend + "#" + AllGroup;
+}
+
+
+string UserManage::SendMsg(string buf, int confd)//单发消息，buf:发送时间，发信人账号，消息内容；confd:收信人socket;;;return: 11#Done(收信人已收到)
+{
+	//write(confd, buf, sizeof(buf));
+	cout << buf << " to " << confd << endl;
+	return "11#Done";
 }
 
 string UserManage::Receive(string buf)//buf:群号或好友账号|用户账号|发送时间|消息内容; return:10#Done(表示收到消息且已发出）
@@ -166,12 +170,13 @@ string UserManage::Receive(string buf)//buf:群号或好友账号|用户账号|�
 	string Num = num, Acc = acc, Time = time, Msg = msg;
 
 	string CNum;
-	if (buf < "40000000")//buf是好友账号
+	if (Num < "40000000")//buf是好友账号
 	{
 		string Member1 = Acc + "|" + Num;
 		string Member2 = Num + "|" + Acc;
-		string SQL = "CMember = " + Member1 + "or CMember = " + Member2;
+		string SQL = "CMember = '" + Member1 + "'or CMember = '" + Member2 + "'";
 		D.SelectData(2, SQL);
+
 		int Num = D.Cluster1[0].CNum;
 		CNum = to_string(Num);
 	}
@@ -179,20 +184,18 @@ string UserManage::Receive(string buf)//buf:群号或好友账号|用户账号|�
 	{
 		CNum = Num;
 	}
-	string SMsg = "|" + Time + "," + Acc + "," + Msg + "'";
+
+	string SMsg = Time + "," + Acc + "," + Msg;
 
 	D.SelectData(2, "CNum = " + CNum);
-	string MsgRecord = D.Cluster1[0].MsgRecord;//'Time1,Acount1,Msg1|Time2,Account2,Msg2|Time3,Account3,Msg3'
-	char* M = new char[MsgRecord.length() + 1];
-	char* Ms = new char[MsgRecord.length() + 1];
-	strcpy(M, MsgRecord.c_str());
-	sscanf(M, "%s'", Ms);//MsgRecord:'Time1,Acount1,Msg1|Time2,Account2,Msg2|Time3,Account3,Msg3
-	MsgRecord = Ms;
-	string RMsg = MsgRecord + SMsg;
+
+	string MsgRecord = D.Cluster1[0].MsgRecord;//Time1,Acount1,Msg1|Time2,Account2,Msg2|Time3,Account3,Msg3
+	string RMsg = "'" + MsgRecord + "|" + SMsg + "'";
 
 	D.ChangeData(2, "MsgRecord = " + RMsg, "CNum = " + CNum);
 
 	D.SelectData(2, "CNum = " + CNum);
+
 	string CMember = D.Cluster1[0].CMember;
 	char* CM = new char[CMember.length() + 1];
 	strcpy(CM, CMember.c_str());
@@ -200,8 +203,8 @@ string UserManage::Receive(string buf)//buf:群号或好友账号|用户账号|�
 	User = strtok(CM, "|");//字符串拆分strtok()
 	while (User != NULL)
 	{
-		Acc = atoi(User);
-		D.SelectData(1, "Account = " + Acc);
+		string A = User;
+		D.SelectData(1, "Account = " + A);
 		int LogStatus = D.User1[0].LogStatus;
 		if (LogStatus == 1)
 		{
@@ -214,18 +217,13 @@ string UserManage::Receive(string buf)//buf:群号或好友账号|用户账号|�
 	return "10#Done";
 }
 
-string UserManage::SendMsg(string buf, int confd)//单发消息，buf:发送时间，发信人账号，消息内容；confd:收信人socket;;;return: 11#Done(收信人已收到)
-{
-	//write(confd, buf, sizeof(buf));
-	return "11#Done";
-}
-
 string UserManage::SearchUser(string buf)//buf:用户账号; return : 6#账号#昵称#头像#登录状态#上次下线时间 / 该用户不存在
 {
 	string data;
-	D.SelectData(1, "Account = " + buf);
 	int Account, Portrait, LogStatus;
 	string UName, OffLineTime;
+
+	D.SelectData(1, "Account = " + buf);
 	if (!D.User1.empty())
 	{
 		Account = D.User1[0].Account;
@@ -233,12 +231,12 @@ string UserManage::SearchUser(string buf)//buf:用户账号; return : 6#账号#�
 		LogStatus = D.User1[0].LogStatus;
 		UName = D.User1[0].UName;
 		OffLineTime = D.User1[0].OffLineTime;
-		data = "6#" + to_string(Account) + "#" + UName + to_string(Portrait) + "#" + to_string(LogStatus) + OffLineTime;
+		data = "6#" + to_string(Account) + "#" + UName + "#" + to_string(Portrait) + "#" + to_string(LogStatus) + "#" + OffLineTime;
 		return data;
 	}
 	else
 	{
-		D.SelectData(1, "UName = " + buf);
+		D.SelectData(1, "UName = '" + buf + "'");
 		if (!D.User1.empty())
 		{
 			Account = D.User1[0].Account;
@@ -246,7 +244,7 @@ string UserManage::SearchUser(string buf)//buf:用户账号; return : 6#账号#�
 			LogStatus = D.User1[0].LogStatus;
 			UName = D.User1[0].UName;
 			OffLineTime = D.User1[0].OffLineTime;
-			data = "6#"+ to_string(Account) + "#" + UName + to_string(Portrait) + "#" + to_string(LogStatus) + OffLineTime;
+			data = "6#" + to_string(Account) + "#" + UName + "#" + to_string(Portrait) + "#" + to_string(LogStatus) + "#" + OffLineTime;
 			return data;
 		}
 		else
@@ -269,7 +267,7 @@ string UserManage::AddFriend1(string buf)//buf:用户账号|好友账号|备注�
 	//判断两人是否已经是好友
 	string Member1 = Acc1 + "|" + Acc2;
 	string Member2 = Acc2 + "|" + Acc1;
-	string SQL = "CMember = " + Member1 + "or CMember = " + Member2;
+	string SQL = "CMember = '" + Member1 + "'or CMember = '" + Member2 + "'";
 	D.SelectData(2, SQL);
 	if (!D.Cluster1.empty())
 	{
@@ -279,19 +277,20 @@ string UserManage::AddFriend1(string buf)//buf:用户账号|好友账号|备注�
 	string data;
 	string Member = Acc1 + "|" + Acc2;
 
-	D.SelectData(2, "\0");
+	D.SelectData(2, "/0");
 	size_t n = D.Cluster1.size() - 1;
 	int MaxCNum = D.Cluster1[n].CNum;
 
-	data = "\0" + ',' + '1' + ',' + to_string(MaxCNum + 1) + ',' + Member + ',' + "\0"; //?????
-	D.AddData(2, data);
+	data = to_string(MaxCNum+1) + ",'/0', " + to_string(1) + ", '" + Member + "', " + "'/0'";
+	//data = "NULL,'/0', " + to_string(1) + ", '" + Member + "', " + "'/0'";
+	bool b = D.AddData(2, data);
 
 	D.SelectData(1, "Account = " + Acc2);
 	int Socket = D.User1[0].Socket;
 	D.SelectData(1, "Account = " + Acc1);
 	string UName = D.User1[0].UName;
 
-	string SMsg = "11#"+ UName + "," + Acc1 + "," + to_string(Socket);
+	string SMsg = "11#" + UName + "," + Acc1 + "," + Msg;
 	SendMsg(SMsg, Socket); //将好友请求以消息的形式发给被邀请人  
 
 	return "7#sended";
@@ -314,9 +313,9 @@ string UserManage::AddFriend2(string buf)//buf:accept/reject|用户账号|好友
 
 	if (A_R == "reject")
 	{
-		D.DeleteData(2, "CMember = " + Acc1 + "|" + Acc2);
+		bool b = D.DeleteData(2, "CMember = '" + Acc1 + "|" + Acc2 + "'");
 
-		string SMsg = "7#You are rejected by " + UName + Acc2;
+		string SMsg = "7#You are rejected by " + UName + "," + Acc2;
 		SendMsg(SMsg, Socket);
 		return "7#reject";
 	}
@@ -338,14 +337,15 @@ string UserManage::ChangeData(string buf)//buf:用户账号|要修改的属性�
 	sscanf(Buffer, "%[^|]|%[^|]|%s", acc, col, cdata);
 	string Acc = acc, Col = col, CData = cdata;
 
-	D.ChangeData(1, Col + " = " + CData, "Account = " + Acc);
+	bool b = D.ChangeData(1, Col + " = '" + CData + "'", "Account = " + Acc);
 
 	return "8#Success";
 }
 
 string UserManage::SelecteAccount(string buf)//buf:用户账号(string);return : 12#Success(成功完成）
 {
-	D.DeleteData(1, "Account = " + buf);
+	bool b = D.DeleteData(1, "Account = " + buf);
+
 	return "12#Success";
 }
 
@@ -359,11 +359,11 @@ string UserManage::SelecteGroup(string buf)//buf:发出请求的用户账号|群
 	string Num = num, Acc = acc;
 
 	string CNum;
-	if (buf < "40000000")//buf是好友账号
+	if (Num < "40000000")//buf是好友账号
 	{
 		string Member1 = Acc + "|" + Num;
 		string Member2 = Num + "|" + Acc;
-		string SQL = "CMember = " + Member1 + "or CMember = " + Member2;
+		string SQL = "CMember = '" + Member1 + "' OR CMember = '" + Member2 + "'";
 		D.SelectData(2, SQL);
 		int Num = D.Cluster1[0].CNum;
 		CNum = to_string(Num);
@@ -377,7 +377,7 @@ string UserManage::SelecteGroup(string buf)//buf:发出请求的用户账号|群
 	int COwner = D.Cluster1[0].COwner;
 	if (COwner == atoi(Acc.c_str()) || COwner == 1)//该用户是群主则可以解散该群，否则不可以
 	{
-		D.DeleteData(2, "CNum = " + CNum);
+		bool b = D.DeleteData(2, "CNum = " + CNum);
 		return "13#Success";
 	}
 	return "13#Failed";
