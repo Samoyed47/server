@@ -320,7 +320,7 @@ string UserManage::SearchUser(string buf)//buf:该用户账号|被搜索的账�
 	}
 }
 
-string UserManage::AddFriend1(string buf)//buf:用户账号|好友账号；return : 7#Y/N(已经是好友）
+string UserManage::AddFriend1(string buf)//buf:用户账号|好友账号；return : 7#Y#好友账号#好友昵称/N(已经是好友）
 {
 	char* acc1 = new char[buf.length() + 1];
 	char* acc2 = new char[buf.length() + 1];
