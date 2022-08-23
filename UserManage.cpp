@@ -1,7 +1,7 @@
 #include "UserManage.h"
 
-//return: 编号#该消息发送给哪个用户账号#。。。。。。
-string UserManage::Register(string buf) //buf:nickname|password; return:5#该消息发送给哪个用户账号#账号(string)
+//return: 编号#。。。。。。
+string UserManage::Register(string buf) //buf:nickname|password; return:5#账号(string)
 {
 	char* Nickname = new char[buf.length() + 1];
 	char* Password = new char[buf.length() + 1];
@@ -21,7 +21,7 @@ string UserManage::Register(string buf) //buf:nickname|password; return:5#该消
 	delete[] Nickname;
 	delete[] Password;
 	delete[] Buffer;
-	return string("5#" + to_string(MaxAccount+1) + "#" + to_string(MaxAccount + 1));
+	return string("5#" + to_string(MaxAccount + 1));
 }
 
 string UserManage::Logging(string buf)//buf:账号|密码|Socket; return:9#该消息发送给哪个用户账号#LogSuccess的return / 9#该消息发送给哪个用户账号#Failed
@@ -285,7 +285,7 @@ string UserManage::Receive(string buf, vector<int>& Members)//buf:群号或好�
 	return "10#" + SMsg2;
 }
 
-string UserManage::SearchUser(string buf)//buf:该用户账号|被搜索的账号; return : 6#该消息发送给哪个用户账号#账号#昵称#登录状态#上次下线时间/ 该用户不存在
+string UserManage::SearchUser(string buf)//buf:该用户账号|被搜索的账号; return : 6#账号#昵称#登录状态#上次下线时间/ 该用户不存在
 {
 	char* now = new char[buf.length() + 1];
 	char* search = new char[buf.length() + 1];
@@ -311,7 +311,7 @@ string UserManage::SearchUser(string buf)//buf:该用户账号|被搜索的账�
 		LogStatus = D.User1[0].LogStatus;
 		UName = D.User1[0].UName;
 		OffLineTime = D.User1[0].OffLineTime;
-		data = "6#" + Now + "#" + to_string(Account) + "#" + UName + "#" + to_string(LogStatus) + "#" + OffLineTime;
+		data = "6#" + to_string(Account) + "#" + UName + "#" + to_string(LogStatus) + "#" + OffLineTime;
 		return data;
 	}
 	else
@@ -320,7 +320,7 @@ string UserManage::SearchUser(string buf)//buf:该用户账号|被搜索的账�
 	}
 }
 
-string UserManage::AddFriend1(string buf)//buf:用户账号|好友账号|备注信息;该函数：发送好友请求；return : 7#该消息发送给哪个用户账号#Y/N(已经是好友）
+string UserManage::AddFriend1(string buf)//buf:用户账号|好友账号|备注信息;该函数：发送好友请求；return : 7#Y/N(已经是好友）
 {
 	char* acc1 = new char[buf.length() + 1];
 	char* acc2 = new char[buf.length() + 1];
@@ -341,7 +341,7 @@ string UserManage::AddFriend1(string buf)//buf:用户账号|好友账号|备注�
 	D.SelectData(2, SQL);
 	if (!D.Cluster1.empty())
 	{
-		return "7#" + Acc1 +"#" + "N";
+		return "7#N";
 	}
 
 	string data;
@@ -354,10 +354,10 @@ string UserManage::AddFriend1(string buf)//buf:用户账号|好友账号|备注�
 	data = to_string(MaxCNum + 1) + ",'/0', " + to_string(1) + ", '" + Member + "', " + "'/0'";
 	D.AddData(2, data);
 	
-	return "7#" + Acc1 + "#" + "Y";
+	return "7#Y";
 }
 
-string UserManage::ChangeData(string buf)//buf:用户账号|要修改的属性名|修改后的内容;return : 8#该消息发送给哪个用户账号#Success(成功完成）
+string UserManage::ChangeData(string buf)//buf:用户账号|要修改的属性名|修改后的内容;return : 8#Success(成功完成）
 {
 	char* acc = new char[buf.length() + 1];
 	char* col = new char[buf.length() + 1];
@@ -381,10 +381,10 @@ string UserManage::ChangeData(string buf)//buf:用户账号|要修改的属性�
 	}
 	
 
-	return "8#" + Acc + "#" + "Success";
+	return "8#Success";
 }
 
-string UserManage::SelecteAccount(string buf)//buf:用户账号(string);return : 12#该消息发送给哪个用户账号#Success(成功完成）
+string UserManage::SelecteAccount(string buf)//buf:用户账号(string);return : 12#Success(成功完成）
 {
 	D.DeleteData(1, "Account = " + buf);//删除该用户
 	//删除该用户的所有好友关系
@@ -421,10 +421,10 @@ string UserManage::SelecteAccount(string buf)//buf:用户账号(string);return :
 		delete[] CM;
 	}
 	
-	return "12#" + buf + "#" + "Success";
+	return "12#Success";
 }
 
-string UserManage::SelecteGroup(string buf)//buf:发出请求的用户账号|好友账号;return : 13#该消息发送给哪个用户账号#Success(成功完成）/Failed（操作无效）
+string UserManage::SelecteGroup(string buf)//buf:发出请求的用户账号|好友账号;return : 13#Success(成功完成）
 {
 	char* acc = new char[buf.length() + 1];
 	char* num = new char[buf.length() + 1];
@@ -440,5 +440,5 @@ string UserManage::SelecteGroup(string buf)//buf:发出请求的用户账号|好
 	string Member2 = Num + "|" + Acc;
 
 	D.DeleteData(2, "CMember='" + Member1 + "' or CMember='" + Member2 + "'");
-	return "13#" + Acc + "#" + "Success";
+	return "13#Success";
 }
