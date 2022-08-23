@@ -24,7 +24,7 @@ string UserManage::Register(string buf) //buf:nickname|password; return:5#账号
 	return string("5#" + to_string(MaxAccount + 1));
 }
 
-string UserManage::Logging(string buf)//buf:账号|密码|Socket; return:9#该消息发送给哪个用户账号#LogSuccess的return / 9#该消息发送给哪个用户账号#Failed
+string UserManage::Logging(string buf)//buf:账号|密码|Socket; return:9#LogSuccess的return / 9#Failed
 {
 	char* acc = new char[buf.length() + 1];
 	char* pword = new char[buf.length() + 1];
@@ -45,17 +45,17 @@ string UserManage::Logging(string buf)//buf:账号|密码|Socket; return:9#该�
 		string Password = D.User1[0].Password;
 		if (Password == PWord)
 		{
-			ans = "9#" + Acc + "#";
+			ans = "9#";
 			ans += LogSuccess(buf);
 		}
 		else
 		{
-			ans = "9#" + Acc + "#Failed";
+			ans = "9#Failed";
 		}
 	}
 	else
 	{
-		ans = "9#" + Acc + "#Failed";
+		ans = "9#Failed";
 	}
 	delete[] acc;
 	delete[] pword;
@@ -355,7 +355,7 @@ string UserManage::AddFriend1(string buf)//buf:用户账号|好友账号;该函�
 	return "7#Y";
 }
 
-string UserManage::ChangeData(string buf)//buf:用户账号|要修改的属性名(a/b)|修改后的内容;return : 8#Success(成功完成）
+string UserManage::ChangeData(string buf)//buf:用户账号|要修改的属性名|修改后的内容;return : 8#Success(成功完成）
 {
 	char* acc = new char[buf.length() + 1];
 	char* col = new char[buf.length() + 1];
