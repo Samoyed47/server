@@ -320,7 +320,7 @@ string UserManage::SearchUser(string buf)//buf:该用户账号|被搜索的账�
 	}
 }
 
-string UserManage::AddFriend1(string buf)//buf:用户账号|好友账号;该函数：发送好友请求；return : 7#Y/N(已经是好友）
+string UserManage::AddFriend1(string buf)//buf:用户账号|好友账号；return : 7#Y/N(已经是好友）
 {
 	char* acc1 = new char[buf.length() + 1];
 	char* acc2 = new char[buf.length() + 1];
@@ -351,8 +351,12 @@ string UserManage::AddFriend1(string buf)//buf:用户账号|好友账号;该函�
 
 	data = to_string(MaxCNum + 1) + ",'/0', " + to_string(1) + ", '" + Member + "', " + "'/0'";
 	D.AddData(2, data);
+
+	D.SelectData(1, "Account=" + Acc2);
+	string UNum = to_string(D.User1[0].Account);
+	string UName = D.User1[0].UName;
 	
-	return "7#Y";
+	return "7#Y#" + UNum + "#" + UName;
 }
 
 string UserManage::ChangeData(string buf)//buf:用户账号|要修改的属性名|修改后的内容;return : 8#Success(成功完成）
