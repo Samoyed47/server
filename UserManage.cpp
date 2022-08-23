@@ -426,7 +426,7 @@ string UserManage::SelecteAccount(string buf)//buf:用户账号(string);return :
 	return "12#Success";
 }
 
-string UserManage::SelecteGroup(string buf)//buf:发出请求的用户账号|好友账号;return : 13#Success(成功完成）
+string UserManage::SelecteGroup(string buf)//buf:发出请求的用户账号|好友账号;return : 13#好友账号#Success(成功完成）
 {
 	char* acc = new char[buf.length() + 1];
 	char* num = new char[buf.length() + 1];
@@ -442,5 +442,5 @@ string UserManage::SelecteGroup(string buf)//buf:发出请求的用户账号|好
 	string Member2 = Num + "|" + Acc;
 
 	D.DeleteData(2, "CMember='" + Member1 + "' or CMember='" + Member2 + "'");
-	return "13#Success";
+	return "13#" + Num + "#Success";
 }
