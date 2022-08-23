@@ -326,7 +326,7 @@ string UserManage::AddFriend1(string buf)//buf:用户账号|好友账号;该函�
 	char* acc2 = new char[buf.length() + 1];
 	char* Buffer = new char[buf.length() + 1];
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%[^|]|%[^|]|%s", acc1, acc2);
+	sscanf(Buffer, "%[^|]|%s", acc1, acc2);
 	string Acc1 = acc1, Acc2 = acc2;
 	delete[] acc1;
 	delete[] acc2;
