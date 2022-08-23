@@ -320,18 +320,16 @@ string UserManage::SearchUser(string buf)//buf:该用户账号|被搜索的账�
 	}
 }
 
-string UserManage::AddFriend1(string buf)//buf:用户账号|好友账号|备注信息;该函数：发送好友请求；return : 7#Y/N(已经是好友）
+string UserManage::AddFriend1(string buf)//buf:用户账号|好友账号;该函数：发送好友请求；return : 7#Y/N(已经是好友）
 {
 	char* acc1 = new char[buf.length() + 1];
 	char* acc2 = new char[buf.length() + 1];
-	char* msg = new char[buf.length() + 1];
 	char* Buffer = new char[buf.length() + 1];
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%[^|]|%[^|]|%s", acc1, acc2, msg);
-	string Acc1 = acc1, Acc2 = acc2, Msg = msg;
+	sscanf(Buffer, "%[^|]|%[^|]|%s", acc1, acc2);
+	string Acc1 = acc1, Acc2 = acc2;
 	delete[] acc1;
 	delete[] acc2;
-	delete[] msg;
 	delete[] Buffer;
 
 	//判断两人是否已经是好友
@@ -357,7 +355,7 @@ string UserManage::AddFriend1(string buf)//buf:用户账号|好友账号|备注�
 	return "7#Y";
 }
 
-string UserManage::ChangeData(string buf)//buf:用户账号|要修改的属性名|修改后的内容;return : 8#Success(成功完成）
+string UserManage::ChangeData(string buf)//buf:用户账号|要修改的属性名(a/b)|修改后的内容;return : 8#Success(成功完成）
 {
 	char* acc = new char[buf.length() + 1];
 	char* col = new char[buf.length() + 1];
