@@ -224,7 +224,7 @@ string UserManage::LogOut(string buf)//buf:账号; return:(无）
 }
 
 
-string UserManage::Receive(string buf, vector<int>& Members)//buf:群号或好友账号|用户账号|发送时间|消息内容; return:10#发出消息的用户的账号#群号或好友账号#时间#对话消息
+string UserManage::Receive(string buf, vector<int>& Members)//buf:用户账号|群号或好友账号|发送时间|消息内容; return:发出者昵称#时间#信息内容
 {
 	char* num = new char[buf.length() + 1];
 	char* acc = new char[buf.length() + 1];
@@ -232,9 +232,10 @@ string UserManage::Receive(string buf, vector<int>& Members)//buf:群号或好�
 	char* msg = new char[buf.length() + 1];
 	char* Buffer = new char[buf.length() + 1];
 	strcpy(Buffer, buf.c_str());
-	sscanf(Buffer, "%[^|]|%[^|]|%[^|]|%s", num, acc, time, msg);
+	sscanf(Buffer, "%[^|]|%[^|]|%[^|]|%s", acc, num, time, msg);
 	string Num = num, Acc = acc, Time = time, Msg = msg;
-
+	//cout << Num << Acc << Time << Msg << endl;
+	//确定群组编号
 	string CNum;
 	if (Num < "40000000")//Num是好友账号
 	{
@@ -250,21 +251,32 @@ string UserManage::Receive(string buf, vector<int>& Members)//buf:群号或好�
 	{
 		CNum = Num;
 	}
+	//cout << CNum << endl;
 
-	string SMsg = Time + "," + Acc + "," + Msg;
-	D.SelectData(1, "Account = " + Acc);
+	string SMsg = Time + "," + Acc + "," + Msg;//存入数据库的格式
+	//cout << SMsg << endl;
+
+	D.SelectData(1, "Account=" + Acc);
 	string NickName = D.User1[0].UName;
-	string SMsg2 =  Acc + "#" + Num + "#" + Time + "#" + Msg;
+	string SMsg2 = NickName + "#" + Time + "#" + Msg;//返回给客户端的格式
+	//cout << SMsg2 << endl;
 
+	//存入表中聊天记录
 	D.SelectData(2, "CNum = " + CNum);
-
 	string MsgRecord = D.Cluster1[0].MsgRecord;//Time1,Acount1,Msg1|Time2,Account2,Msg2|Time3,Account3,Msg3
-	string RMsg = "'" + MsgRecord + "|" + SMsg + "'";
-
+	string RMsg;
+	if (MsgRecord == "/0")
+	{
+		RMsg = "'" + SMsg + "'";
+	}
+	else
+	{
+		RMsg = "'" + MsgRecord + "|" + SMsg + "'";
+	}
+	//cout << RMsg << endl;
 	D.ChangeData(2, "MsgRecord = " + RMsg, "CNum = " + CNum);
-
+	//填充vector
 	D.SelectData(2, "CNum = " + CNum);
-
 	string CMember = D.Cluster1[0].CMember;
 	char* CM = new char[CMember.length() + 1];
 	strcpy(CM, CMember.c_str());
@@ -272,7 +284,12 @@ string UserManage::Receive(string buf, vector<int>& Members)//buf:群号或好�
 	User = strtok(CM, "|");//字符串拆分strtok()
 	while (User != NULL)
 	{
-		Members.push_back(atoi(User));
+		string U = User;
+		if (U != Acc)
+		{
+			Members.push_back(atoi(User));
+		}
+		
 		User = strtok(NULL, "|");
 	}
 
@@ -282,9 +299,8 @@ string UserManage::Receive(string buf, vector<int>& Members)//buf:群号或好�
 	delete[] msg;
 	delete[] Buffer;
 	delete[] CM;
-	return "10#" + SMsg2;
+	return SMsg2;
 }
-
 string UserManage::SearchUser(string buf)//buf:该用户账号|被搜索的账号; return : 6#账号#昵称#登录状态#上次下线时间/ 该用户不存在
 {
 	char* now = new char[buf.length() + 1];
